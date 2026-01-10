@@ -3702,7 +3702,72 @@
                 }
             }, 5000);
         }
-    </script>
+    <script>
+const firebaseConfig = {
+    apiKey: "AIzaSyCMn9LZIhWE3c7-UrgWBub7J-RzZtyOQdU",
+    authDomain: "examsystem-f6327.firebaseapp.com",
+    projectId: "examsystem-f6327",
+    storageBucket: "examsystem-f6327.firebasestorage.app",
+    messagingSenderId: "539208870836",
+    appId: "1:539208870836:web:6a59e979017358581f20e1",
+    measurementId: "G-N4BEB3DQJM"
+};
+
+// تهيئة Firebase
+if (typeof firebase !== 'undefined') {
+    firebase.initializeApp(firebaseConfig);
+    window.db = firebase.firestore();
+    console.log("✅ Firebase جاهز للاستخدام!");
+    
+    // دالة لحفظ الاختبار في Firebase
+    window.saveExamToFirebase = async function(examData) {
+        try {
+            // إضافة بيانات إضافية
+            examData.createdAt = firebase.firestore.FieldValue.serverTimestamp();
+            examData.shareCode = Math.floor(100000 + Math.random() * 900000).toString();
+            examData.teacher = "معلم"; // يمكن تغييره
+            
+            // حفظ في قاعدة البيانات
+            const docRef = await db.collection('exams').add(examData);
+            console.log("تم حفظ الاختبار بنجاح! المعرف:", docRef.id);
+            
+            return {
+                success: true,
+                shareCode: examData.shareCode,
+                shareLink: `https://alatwi777.github.io/talb/?code=${examData.shareCode}`,
+                examId: docRef.id
+            };
+        } catch (error) {
+            console.error("خطأ في حفظ الاختبار:", error);
+            return {
+                success: false,
+                error: error.message
+            };
+        }
+    };
+    
+    // دالة لاستعراض جميع الاختبارات
+    window.getAllExams = async function() {
+        try {
+            const querySnapshot = await db.collection('exams').get();
+            const exams = [];
+            querySnapshot.forEach(doc => {
+                exams.push({
+                    id: doc.id,
+                    ...doc.data()
+                });
+            });
+            return exams;
+        } catch (error) {
+            console.error("خطأ في جلب الاختبارات:", error);
+            return [];
+        }
+    };
+} else {
+    console.error("❌ مكتبة Firebase لم تحمل! تأكد من إضافتها في <head>");
+}
+</script>
 </body>
 </html>
+
 
