@@ -5,6 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>نظام إدارة الاختبارات - لوحة المعلم</title>
     
+    <!-- إضافة Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    
     <!-- أنماط حماية كلمة المرور -->
     <style>
         /* طبقة الحماية - تأتي فوق كل شيء */
@@ -1184,12 +1189,31 @@
 
     <script>
         // ============================================
+        // تهيئة Firebase
+        // ============================================
+        const firebaseConfig = {
+            apiKey: "AIzaSyBGM5RC1JByNmImbjHYaDpPbPuvMeMm2KM",
+            authDomain: "molm-a8a5c.firebaseapp.com",
+            projectId: "molm-a8a5c",
+            storageBucket: "molm-a8a5c.firebasestorage.app",
+            messagingSenderId: "142771291378",
+            appId: "1:142771291378:web:1d7655600df7d0cdccbc6b",
+            measurementId: "G-7HZVREBZ0N"
+        };
+        
+        // تهيئة Firebase
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+        const auth = firebase.auth();
+        
+        // ============================================
         // نظام حماية كلمة المرور
         // ============================================
         const CORRECT_PASSWORD = "123456"; // ⚠️ غيّر هذه القيمة إلى كلمة المرور التي تريدها
         let attemptsLeft = 3;
+        let currentTeacherId = null;
         
-        function verifyPassword() {
+        async function verifyPassword() {
             const passwordInput = document.getElementById('passwordInput');
             const errorMessage = document.getElementById('errorMessage');
             const attemptsCount = document.getElementById('attemptsCount');
@@ -1205,7 +1229,7 @@
             // التحقق من كلمة المرور
             if (enteredPassword === CORRECT_PASSWORD) {
                 // ✅ كلمة المرور صحيحة
-                successLogin();
+                await successLogin();
             } else {
                 // ❌ كلمة المرور خاطئة
                 attemptsLeft--;
@@ -1237,27 +1261,54 @@
             }, 500);
         }
         
-        function successLogin() {
-            // حفظ حالة الدخول في الجلسة
-            sessionStorage.setItem('teacher_logged_in', 'true');
-            sessionStorage.setItem('login_time', new Date().getTime());
-            
-            // إخفاء طبقة الحماية بتأثير
-            const protectionLayer = document.getElementById('password-protection');
-            protectionLayer.style.animation = 'fadeOut 0.5s forwards';
-            
-            // إظهار الموقع الرئيسي بعد تأخير
-            setTimeout(() => {
-                protectionLayer.style.display = 'none';
-                const mainSite = document.querySelector('.main-site');
-                mainSite.style.display = 'block';
+        async function successLogin() {
+            try {
+                // إنشاء معرف فريد للمعلم
+                const teacherId = 'teacher_' + Date.now();
+                currentTeacherId = teacherId;
                 
+                // حفظ حالة الدخول في localStorage
+                localStorage.setItem('teacher_id', teacherId);
+                localStorage.setItem('teacher_logged_in', 'true');
+                localStorage.setItem('login_time', new Date().getTime());
+                
+                // التحقق من وجود بيانات المعلم في Firebase
+                const teacherDoc = await db.collection('teachers').doc(teacherId).get();
+                if (!teacherDoc.exists) {
+                    // إنشاء وثيقة جديدة للمعلم
+                    await db.collection('teachers').doc(teacherId).set({
+                        id: teacherId,
+                        createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                        lastLogin: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+                } else {
+                    // تحديث وقت الدخول الأخير
+                    await db.collection('teachers').doc(teacherId).update({
+                        lastLogin: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+                }
+                
+                // إخفاء طبقة الحماية بتأثير
+                const protectionLayer = document.getElementById('password-protection');
+                protectionLayer.style.animation = 'fadeOut 0.5s forwards';
+                
+                // إظهار الموقع الرئيسي بعد تأخير
                 setTimeout(() => {
-                    mainSite.style.opacity = '1';
-                    // تهيئة الموقع
-                    initializeMainSite();
-                }, 50);
-            }, 500);
+                    protectionLayer.style.display = 'none';
+                    const mainSite = document.querySelector('.main-site');
+                    mainSite.style.display = 'block';
+                    
+                    setTimeout(() => {
+                        mainSite.style.opacity = '1';
+                        // تهيئة الموقع
+                        initializeMainSite();
+                    }, 50);
+                }, 500);
+                
+            } catch (error) {
+                console.error('خطأ في تسجيل الدخول:', error);
+                showPasswordError('حدث خطأ في تسجيل الدخول');
+            }
         }
         
         // الدخول باستخدام زر Enter
@@ -1268,19 +1319,21 @@
         });
         
         // التحقق من حالة الدخول عند تحميل الصفحة
-        window.addEventListener('load', function() {
-            const isLoggedIn = sessionStorage.getItem('teacher_logged_in');
-            const loginTime = parseInt(sessionStorage.getItem('login_time') || '0');
+        window.addEventListener('load', async function() {
+            const isLoggedIn = localStorage.getItem('teacher_logged_in');
+            const loginTime = parseInt(localStorage.getItem('login_time') || '0');
             const currentTime = new Date().getTime();
             const hoursSinceLogin = (currentTime - loginTime) / (1000 * 60 * 60);
             
             // إذا كان المستخدم قد سجل دخوله قبل أقل من 8 ساعات
             if (isLoggedIn === 'true' && hoursSinceLogin < 8) {
-                successLogin();
+                currentTeacherId = localStorage.getItem('teacher_id');
+                await successLogin();
             } else {
                 // إزالة بيانات الجلسة القديمة
-                sessionStorage.removeItem('teacher_logged_in');
-                sessionStorage.removeItem('login_time');
+                localStorage.removeItem('teacher_logged_in');
+                localStorage.removeItem('login_time');
+                localStorage.removeItem('teacher_id');
                 
                 // التركيز على حقل الإدخال
                 document.getElementById('passwordInput').focus();
@@ -1290,11 +1343,11 @@
         // ============================================
         // نظام الموقع الرئيسي
         // ============================================
-        function initializeMainSite() {
+        async function initializeMainSite() {
             // تهيئة الصفحة
             updateCurrentDate();
             setDefaultDates();
-            loadAllData();
+            await loadAllData();
             updateDashboard();
             loadHeaderData();
         }
@@ -1312,7 +1365,8 @@
             questions: [],
             createdAt: '',
             isPublished: false,
-            publishedAt: ''
+            publishedAt: '',
+            teacherId: currentTeacherId
         };
         
         let studentsList = [];
@@ -1381,20 +1435,96 @@
             showAlert('تم حفظ بيانات الرأس بنجاح', 'success');
         }
         
-        // تحميل جميع البيانات
-        function loadAllData() {
+        // تحميل جميع البيانات من Firebase
+        async function loadAllData() {
             try {
-                studentsList = JSON.parse(localStorage.getItem('teacher_students')) || [];
-                testsList = JSON.parse(localStorage.getItem('teacher_tests')) || [];
-                resultsList = JSON.parse(localStorage.getItem('teacher_results')) || [];
+                if (!currentTeacherId) {
+                    showAlert('لم يتم تسجيل الدخول', 'error');
+                    return;
+                }
+                
+                // تحميل الطلاب
+                const studentsSnapshot = await db.collection('students')
+                    .where('teacherId', '==', currentTeacherId)
+                    .get();
+                
+                studentsList = [];
+                studentsSnapshot.forEach(doc => {
+                    studentsList.push({ id: doc.id, ...doc.data() });
+                });
+                
+                // تحميل الاختبارات
+                const testsSnapshot = await db.collection('tests')
+                    .where('teacherId', '==', currentTeacherId)
+                    .get();
+                
+                testsList = [];
+                testsSnapshot.forEach(doc => {
+                    testsList.push({ id: doc.id, ...doc.data() });
+                });
+                
+                // تحميل النتائج
+                const resultsSnapshot = await db.collection('results')
+                    .where('teacherId', '==', currentTeacherId)
+                    .get();
+                
+                resultsList = [];
+                resultsSnapshot.forEach(doc => {
+                    resultsList.push({ id: doc.id, ...doc.data() });
+                });
                 
                 updateStudentsTable();
                 updateTestsList();
                 updateResultsList();
+                
+                // الاستماع للتحديثات في الوقت الحقيقي
+                setupRealtimeListeners();
+                
             } catch (error) {
                 console.error('خطأ في تحميل البيانات:', error);
                 showAlert('حدث خطأ في تحميل البيانات', 'error');
             }
+        }
+        
+        // إعداد المستمعين للتحديثات في الوقت الحقيقي
+        function setupRealtimeListeners() {
+            if (!currentTeacherId) return;
+            
+            // الاستماع لتحديثات الطلاب
+            db.collection('students')
+                .where('teacherId', '==', currentTeacherId)
+                .onSnapshot((snapshot) => {
+                    studentsList = [];
+                    snapshot.forEach(doc => {
+                        studentsList.push({ id: doc.id, ...doc.data() });
+                    });
+                    updateStudentsTable();
+                    updateDashboard();
+                });
+            
+            // الاستماع لتحديثات الاختبارات
+            db.collection('tests')
+                .where('teacherId', '==', currentTeacherId)
+                .onSnapshot((snapshot) => {
+                    testsList = [];
+                    snapshot.forEach(doc => {
+                        testsList.push({ id: doc.id, ...doc.data() });
+                    });
+                    updateTestsList();
+                    updateDashboard();
+                });
+            
+            // الاستماع لتحديثات النتائج
+            db.collection('results')
+                .where('teacherId', '==', currentTeacherId)
+                .onSnapshot((snapshot) => {
+                    resultsList = [];
+                    snapshot.forEach(doc => {
+                        resultsList.push({ id: doc.id, ...doc.data() });
+                    });
+                    updateResultsList();
+                    updateDashboard();
+                });
         }
         
         // تحديث لوحة التحكم
@@ -1628,9 +1758,14 @@
             }
         }
         
-        // حفظ الاختبار
-        function saveTest() {
+        // حفظ الاختبار في Firebase
+        async function saveTest() {
             try {
+                if (!currentTeacherId) {
+                    showAlert('يجب تسجيل الدخول أولاً', 'error');
+                    return;
+                }
+                
                 saveHeaderData();
                 
                 currentTest.title = document.getElementById('testTitle').value.trim();
@@ -1641,6 +1776,7 @@
                 
                 currentTest.startTime = document.getElementById('startTime').value;
                 currentTest.endTime = document.getElementById('endTime').value;
+                currentTest.teacherId = currentTeacherId;
                 
                 if (!currentTest.title || !currentTest.subject || currentTest.questions.length === 0) {
                     showAlert('يرجى إدخال عنوان الاختبار والمادة وإضافة أسئلة على الأقل', 'error');
@@ -1668,15 +1804,13 @@
                 currentTest.updatedAt = new Date().toISOString();
                 currentTest.isPublished = false;
                 
-                const existingTestIndex = testsList.findIndex(t => t.id === currentTest.id);
+                // حفظ في Firebase
+                await db.collection('tests').doc(currentTest.id).set({
+                    ...currentTest,
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
                 
-                if (existingTestIndex !== -1) {
-                    testsList[existingTestIndex] = JSON.parse(JSON.stringify(currentTest));
-                } else {
-                    testsList.push(JSON.parse(JSON.stringify(currentTest)));
-                }
-                
-                localStorage.setItem('teacher_tests', JSON.stringify(testsList));
                 savedTestId = currentTest.id;
                 
                 document.getElementById('publishTitle').textContent = currentTest.title;
@@ -1691,7 +1825,6 @@
                 document.getElementById('saveTestBtn').innerHTML = '<i class="fas fa-sync-alt"></i> تحديث الاختبار';
                 
                 showAlert('تم حفظ الاختبار بنجاح! يمكنك الآن نشره للطلاب', 'success');
-                updateTestsList();
                 updateDashboard();
                 
             } catch (error) {
@@ -1715,37 +1848,36 @@
         }
         
         // نشر الاختبار
-        function publishTest() {
+        async function publishTest() {
             try {
+                if (!currentTeacherId) {
+                    showAlert('يجب تسجيل الدخول أولاً', 'error');
+                    return;
+                }
+                
                 if (!currentTest.id && !savedTestId) {
                     showAlert('يجب حفظ الاختبار أولاً قبل نشره', 'error');
                     return;
                 }
                 
                 const testId = currentTest.id || savedTestId;
-                const testIndex = testsList.findIndex(t => t.id === testId);
-                if (testIndex !== -1) {
-                    testsList[testIndex].isPublished = true;
-                    testsList[testIndex].publishedAt = new Date().toISOString();
-                    localStorage.setItem('teacher_tests', JSON.stringify(testsList));
-                    
-                    if (currentTest.id === testId) {
-                        currentTest.isPublished = true;
-                        currentTest.publishedAt = testsList[testIndex].publishedAt;
-                    }
-                    
-                    showAlert('تم نشر الاختبار بنجاح! يمكن للطلاب الآن الوصول إليه', 'success');
-                    updateTestsList();
-                    updateDashboard();
-                    
-                    const publishBtn = document.getElementById('publishTestBtn');
-                    if (publishBtn) {
-                        publishBtn.innerHTML = '<i class="fas fa-check"></i> تم النشر';
-                        publishBtn.disabled = true;
-                    }
-                } else {
-                    showAlert('لم يتم العثور على الاختبار المحفوظ. يرجى حفظه مرة أخرى', 'error');
+                
+                // تحديث الاختبار في Firebase
+                await db.collection('tests').doc(testId).update({
+                    isPublished: true,
+                    publishedAt: firebase.firestore.FieldValue.serverTimestamp(),
+                    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
+                
+                showAlert('تم نشر الاختبار بنجاح! يمكن للطلاب الآن الوصول إليه', 'success');
+                updateDashboard();
+                
+                const publishBtn = document.getElementById('publishTestBtn');
+                if (publishBtn) {
+                    publishBtn.innerHTML = '<i class="fas fa-check"></i> تم النشر';
+                    publishBtn.disabled = true;
                 }
+                
             } catch (error) {
                 console.error('خطأ في نشر الاختبار:', error);
                 showAlert('حدث خطأ في نشر الاختبار', 'error');
@@ -1794,7 +1926,8 @@
                     questions: [],
                     createdAt: currentTest.createdAt,
                     isPublished: false,
-                    publishedAt: ''
+                    publishedAt: '',
+                    teacherId: currentTeacherId
                 };
             } else {
                 currentTest = {
@@ -1809,7 +1942,8 @@
                     questions: [],
                     createdAt: '',
                     isPublished: false,
-                    publishedAt: ''
+                    publishedAt: '',
+                    teacherId: currentTeacherId
                 };
             }
             
@@ -1828,8 +1962,13 @@
         }
         
         // إضافة طالب يدوياً
-        function addStudent() {
+        async function addStudent() {
             try {
+                if (!currentTeacherId) {
+                    showAlert('يجب تسجيل الدخول أولاً', 'error');
+                    return;
+                }
+                
                 const ssn = document.getElementById('studentSsn').value.trim();
                 const name = document.getElementById('studentName').value.trim();
                 
@@ -1843,7 +1982,13 @@
                     return;
                 }
                 
-                if (studentsList.some(student => student.ssn === ssn)) {
+                // التحقق من عدم وجود طالب بنفس الرقم
+                const existingStudent = await db.collection('students')
+                    .where('ssn', '==', ssn)
+                    .where('teacherId', '==', currentTeacherId)
+                    .get();
+                
+                if (!existingStudent.empty) {
                     showAlert('رقم السجل المدني مسجل مسبقاً', 'error');
                     return;
                 }
@@ -1852,18 +1997,19 @@
                     id: 'STU-' + Date.now(),
                     ssn: ssn,
                     name: name,
-                    registeredAt: new Date().toLocaleString('ar-SA')
+                    teacherId: currentTeacherId,
+                    registeredAt: new Date().toLocaleString('ar-SA'),
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
                 };
                 
-                studentsList.push(student);
-                localStorage.setItem('teacher_students', JSON.stringify(studentsList));
+                // حفظ في Firebase
+                await db.collection('students').doc(student.id).set(student);
                 
-                updateStudentsTable();
                 document.getElementById('studentSsn').value = '';
                 document.getElementById('studentName').value = '';
                 
                 showAlert('تمت إضافة الطالب بنجاح', 'success');
-                updateDashboard();
+                
             } catch (error) {
                 console.error('خطأ في إضافة الطالب:', error);
                 showAlert('حدث خطأ في إضافة الطالب', 'error');
@@ -1905,10 +2051,10 @@
                             <td>${student.name}</td>
                             <td>${student.registeredAt}</td>
                             <td>
-                                <button onclick="editStudent(${index})" class="btn btn-secondary" style="padding: 6px 12px; font-size: 13px; margin-left: 5px;">
+                                <button onclick="editStudent('${student.id}')" class="btn btn-secondary" style="padding: 6px 12px; font-size: 13px; margin-left: 5px;">
                                     <i class="fas fa-edit"></i>
                                 </button>
-                                <button onclick="deleteStudent(${index})" class="btn btn-danger" style="padding: 6px 12px; font-size: 13px;">
+                                <button onclick="deleteStudent('${student.id}')" class="btn btn-danger" style="padding: 6px 12px; font-size: 13px;">
                                     <i class="fas fa-trash"></i>
                                 </button>
                             </td>
@@ -1926,13 +2072,13 @@
         }
         
         // معالجة استيراد Excel
-        function handleExcelImport(event) {
+        async function handleExcelImport(event) {
             const file = event.target.files[0];
             if (!file) return;
             
             const reader = new FileReader();
             
-            reader.onload = function(e) {
+            reader.onload = async function(e) {
                 try {
                     const data = new Uint8Array(e.target.result);
                     const workbook = XLSX.read(data, {type: 'array'});
@@ -1947,7 +2093,7 @@
                     const importedStudents = [];
                     const duplicates = [];
                     
-                    jsonData.forEach(row => {
+                    for (const row of jsonData) {
                         const ssn = row['السجل المدني'] || row['ssn'] || row['رقم'] || '';
                         const name = row['الاسم'] || row['name'] || '';
                         
@@ -1955,24 +2101,31 @@
                             const ssnStr = ssn.toString().trim();
                             const nameStr = name.toString().trim();
                             
-                            const isDuplicate = studentsList.some(s => s.ssn === ssnStr);
-                            if (!isDuplicate) {
-                                importedStudents.push({
-                                    id: 'STU-' + Date.now() + Math.random(),
+                            // التحقق من عدم وجود طالب بنفس الرقم
+                            const existingStudent = await db.collection('students')
+                                .where('ssn', '==', ssnStr)
+                                .where('teacherId', '==', currentTeacherId)
+                                .get();
+                            
+                            if (existingStudent.empty) {
+                                const student = {
+                                    id: 'STU-' + Date.now() + Math.random().toString(36).substr(2, 9),
                                     ssn: ssnStr,
                                     name: nameStr,
-                                    registeredAt: new Date().toLocaleString('ar-SA')
-                                });
+                                    teacherId: currentTeacherId,
+                                    registeredAt: new Date().toLocaleString('ar-SA'),
+                                    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                                };
+                                
+                                importedStudents.push(student);
+                                
+                                // حفظ في Firebase
+                                await db.collection('students').doc(student.id).set(student);
                             } else {
                                 duplicates.push(ssnStr);
                             }
                         }
-                    });
-                    
-                    studentsList = studentsList.concat(importedStudents);
-                    localStorage.setItem('teacher_students', JSON.stringify(studentsList));
-                    
-                    updateStudentsTable();
+                    }
                     
                     let message = `تم استيراد ${importedStudents.length} طالب بنجاح`;
                     if (duplicates.length > 0) {
@@ -1980,7 +2133,6 @@
                     }
                     
                     showAlert(message, 'success');
-                    updateDashboard();
                     
                 } catch (error) {
                     console.error('Error:', error);
@@ -2032,18 +2184,49 @@
         }
         
         // تحرير طالب
-        function editStudent(index) {
+        async function editStudent(studentId) {
             try {
-                const student = studentsList[index];
+                const student = studentsList.find(s => s.id === studentId);
+                if (!student) return;
                 
                 const newName = prompt('تعديل اسم الطالب:', student.name);
-                if (newName !== null) student.name = newName;
+                if (newName !== null && newName.trim() !== '') {
+                    // تحديث في Firebase
+                    await db.collection('students').doc(studentId).update({
+                        name: newName.trim(),
+                        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+                    
+                    showAlert('تم تعديل اسم الطالب بنجاح', 'success');
+                }
                 
                 const newSsn = prompt('تعديل السجل المدني:', student.ssn);
-                if (newSsn !== null) student.ssn = newSsn;
+                if (newSsn !== null && newSsn.trim() !== '') {
+                    if (newSsn.trim().length < 10) {
+                        showAlert('رقم السجل المدني يجب أن يكون 10 أرقام على الأقل', 'error');
+                        return;
+                    }
+                    
+                    // التحقق من عدم وجود طالب آخر بنفس الرقم
+                    const existingStudent = await db.collection('students')
+                        .where('ssn', '==', newSsn.trim())
+                        .where('teacherId', '==', currentTeacherId)
+                        .get();
+                    
+                    if (!existingStudent.empty && existingStudent.docs[0].id !== studentId) {
+                        showAlert('رقم السجل المدني مسجل مسبقاً لطالب آخر', 'error');
+                        return;
+                    }
+                    
+                    // تحديث في Firebase
+                    await db.collection('students').doc(studentId).update({
+                        ssn: newSsn.trim(),
+                        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+                    
+                    showAlert('تم تعديل السجل المدني بنجاح', 'success');
+                }
                 
-                localStorage.setItem('teacher_students', JSON.stringify(studentsList));
-                updateStudentsTable();
             } catch (error) {
                 console.error('خطأ في تحرير الطالب:', error);
                 showAlert('حدث خطأ في تحرير الطالب', 'error');
@@ -2051,13 +2234,12 @@
         }
         
         // حذف طالب
-        function deleteStudent(index) {
+        async function deleteStudent(studentId) {
             try {
                 if (confirm('هل أنت متأكد من حذف هذا الطالب؟')) {
-                    studentsList.splice(index, 1);
-                    localStorage.setItem('teacher_students', JSON.stringify(studentsList));
-                    updateStudentsTable();
-                    updateDashboard();
+                    // حذف من Firebase
+                    await db.collection('students').doc(studentId).delete();
+                    showAlert('تم حذف الطالب بنجاح', 'success');
                 }
             } catch (error) {
                 console.error('خطأ في حذف الطالب:', error);
@@ -2066,7 +2248,7 @@
         }
         
         // حذف جميع الطلاب
-        function clearAllStudents() {
+        async function clearAllStudents() {
             try {
                 if (studentsList.length === 0) {
                     showAlert('لا توجد بيانات طلاب للحذف', 'error');
@@ -2074,10 +2256,14 @@
                 }
                 
                 if (confirm('هل أنت متأكد من حذف جميع الطلاب؟')) {
-                    studentsList = [];
-                    localStorage.setItem('teacher_students', JSON.stringify(studentsList));
-                    updateStudentsTable();
-                    updateDashboard();
+                    // حذف جميع الطلاب من Firebase
+                    const batch = db.batch();
+                    studentsList.forEach(student => {
+                        const studentRef = db.collection('students').doc(student.id);
+                        batch.delete(studentRef);
+                    });
+                    
+                    await batch.commit();
                     showAlert('تم حذف جميع الطلاب', 'success');
                 }
             } catch (error) {
@@ -2157,14 +2343,14 @@
                                 <p><i class="fas fa-calendar"></i> الإنشاء: ${new Date(test.createdAt).toLocaleString('ar-SA')}</p>
                             </div>
                             <div style="display: flex; gap: 10px; margin-top: 20px; flex-wrap: wrap;">
-                                <button onclick="viewTestDetails(${index})" class="btn btn-primary">
+                                <button onclick="viewTestDetails('${test.id}')" class="btn btn-primary">
                                     <i class="fas fa-eye"></i> عرض
                                 </button>
-                                <button onclick="deleteTest(${index})" class="btn btn-danger">
+                                <button onclick="deleteTest('${test.id}')" class="btn btn-danger">
                                     <i class="fas fa-trash"></i> حذف
                                 </button>
                                 ${!test.isPublished ? 
-                                    `<button onclick="publishExistingTest(${index})" class="btn btn-publish">
+                                    `<button onclick="publishExistingTest('${test.id}')" class="btn btn-publish">
                                         <i class="fas fa-paper-plane"></i> نشر
                                     </button>` : 
                                     ''
@@ -2188,17 +2374,22 @@
         }
         
         // نشر اختبار موجود
-        function publishExistingTest(index) {
+        async function publishExistingTest(testId) {
             try {
-                if (testsList[index]) {
-                    testsList[index].isPublished = true;
-                    testsList[index].publishedAt = new Date().toISOString();
-                    localStorage.setItem('teacher_tests', JSON.stringify(testsList));
-                    
-                    showAlert('تم نشر الاختبار بنجاح!', 'success');
-                    updateTestsList();
-                    updateDashboard();
+                if (!currentTeacherId) {
+                    showAlert('يجب تسجيل الدخول أولاً', 'error');
+                    return;
                 }
+                
+                // تحديث الاختبار في Firebase
+                await db.collection('tests').doc(testId).update({
+                    isPublished: true,
+                    publishedAt: firebase.firestore.FieldValue.serverTimestamp(),
+                    updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
+                
+                showAlert('تم نشر الاختبار بنجاح!', 'success');
+                
             } catch (error) {
                 console.error('خطأ في نشر الاختبار:', error);
                 showAlert('حدث خطأ في نشر الاختبار', 'error');
@@ -2206,9 +2397,13 @@
         }
         
         // عرض تفاصيل الاختبار
-        function viewTestDetails(index) {
+        function viewTestDetails(testId) {
             try {
-                const test = testsList[index];
+                const test = testsList.find(t => t.id === testId);
+                if (!test) {
+                    showAlert('الاختبار غير موجود', 'error');
+                    return;
+                }
                 
                 const modal = document.createElement('div');
                 modal.style.cssText = `
@@ -2284,14 +2479,25 @@
         }
         
         // حذف اختبار
-        function deleteTest(index) {
+        async function deleteTest(testId) {
             try {
                 if (confirm('هل أنت متأكد من حذف هذا الاختبار؟')) {
-                    testsList.splice(index, 1);
-                    localStorage.setItem('teacher_tests', JSON.stringify(testsList));
-                    updateTestsList();
-                    updateDashboard();
-                    showAlert('تم حذف الاختبار', 'success');
+                    // حذف الاختبار من Firebase
+                    await db.collection('tests').doc(testId).delete();
+                    
+                    // حذف النتائج المرتبطة بالاختبار
+                    const resultsSnapshot = await db.collection('results')
+                        .where('testId', '==', testId)
+                        .get();
+                    
+                    const batch = db.batch();
+                    resultsSnapshot.forEach(doc => {
+                        batch.delete(doc.ref);
+                    });
+                    
+                    await batch.commit();
+                    
+                    showAlert('تم حذف الاختبار والنتائج المرتبطة به', 'success');
                 }
             } catch (error) {
                 console.error('خطأ في حذف الاختبار:', error);
@@ -2300,7 +2506,7 @@
         }
         
         // عرض نتائج اختبار
-        function viewTestResults(testId) {
+        async function viewTestResults(testId) {
             try {
                 const testResults = resultsList.filter(r => r.testId === testId);
                 const test = testsList.find(t => t.id === testId);
@@ -2524,46 +2730,5 @@
             }, 5000);
         }
     </script>
-    <!-- Firebase CDN -->
-<script src="https://www.gstatic.com/firebasejs/10.13.1/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.13.1/firebase-firestore-compat.js"></script>
-
-<!-- إعداد Firebase -->
-<script>
-  const firebaseConfig = {
-    apiKey: "AIzaSyDHYUyj36bCFbin-10KNHv2Y9BfaQ9tooY",
-    authDomain: "exam-system-teacher-student.firebaseapp.com",
-    projectId: "exam-system-teacher-student",
-    storageBucket: "exam-system-teacher-student.firebasestorage.app",
-    messagingSenderId: "982683818654",
-    appId: "1:982683818654:web:824126e45089984152398f",
-    measurementId: "G-Q2SFE6G9RE"
-  };
-
-  // تهيئة Firebase
-  firebase.initializeApp(firebaseConfig);
-
-  // Firestore
-  const db = firebase.firestore();
-
-  // تجربة حفظ بيانات
-  function testSave() {
-    db.collection("testCollection").add({
-      message: "مرحبا من موقع المعلم",
-      time: new Date()
-    })
-    .then((docRef) => {
-      alert("تم حفظ البيانات بنجاح في Firebase");
-      console.log("Document ID:", docRef.id);
-    })
-    .catch((error) => {
-      alert("حدث خطأ أثناء الحفظ");
-      console.error(error);
-    });
-  }
-</script>
-
 </body>
 </html>
-
-
