@@ -3931,42 +3931,9 @@
             }, 5000);
         }
 
-    const API = "https://script.google.com/macros/s/AKfycbyeNwMi6T5XKVC7Myaic6nWW7iFQjSJRHP_A9lBD2VXXeJXsOdKaU430KuxsiI5EPNg/exec";
 
-    function addStudent() {
-        let ssn = document.getElementById("studentSsn").value.trim();
-        let name = document.getElementById("studentName").value.trim();
-
-        if (ssn.length < 10) {
-            alert("رقم السجل المدني يجب أن يكون 10 أرقام");
-            return;
-        }
-
-        if (name.length < 3) {
-            alert("الاسم غير صالح");
-            return;
-        }
-
-        fetch(`${API}?action=addStudent&civil=${ssn}&name=${encodeURIComponent(name)}`)
-            .then(res => res.text())
-            .then(result => {
-                if (result === "ADDED") {
-                    alert("تم إضافة الطالب بنجاح");
-                    document.getElementById("studentSsn").value = "";
-                    document.getElementById("studentName").value = "";
-                } else if (result === "EXISTS") {
-                    alert("الطالب مسجل مسبقًا");
-                } else {
-                    alert("حدث خطأ أثناء الإضافة");
-                }
-            })
-            .catch(err => {
-                console.error(err);
-                alert("تعذر الاتصال بالخادم");
-            });
-    }
-
-</script>
+<script src="teacher.js"></script>
 </body>
 </html>
+
 
