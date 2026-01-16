@@ -1,4 +1,4 @@
-const API = "ضع رابط السكربت هنا";
+const API = "https://script.google.com/macros/s/AKfycbw6GJLmABLnLN3UNU9uIe_BJAI1xUXsdY08d6-wDhhbzvR0uYV_G53BJSTsy6r5boE4/exec";
 
 let questions = [];
 let questionCounter = 1;
