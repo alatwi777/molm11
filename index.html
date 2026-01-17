@@ -3,15 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>برنامج إدارة الاختبارات للمعلم</title>
-    
-    <!-- مكتبات CSS -->
+    <title>برنامج إدارة الاختبارات للمعلم - مع المزامنة</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap" rel="stylesheet">
     <style>
-        /* هنا ضع كل أنماط CSS التي لديك */
-        /* أنسخ محتوى style.css هنا لتجنب مشاكل تحميل ملف منفصل */
-        
+        /* === الأنماط العامة === */
         :root {
             --primary-color: #4a6fa5;
             --secondary-color: #166088;
@@ -43,20 +39,51 @@
             margin: 0 auto;
         }
         
+        /* === الهيدر === */
         header {
             background: white;
-            padding: 20px;
+            padding: 25px;
             border-radius: var(--border-radius);
             box-shadow: var(--shadow);
             margin-bottom: 20px;
             text-align: center;
+            border-right: 5px solid var(--primary-color);
         }
         
-        h1 {
+        header h1 {
             color: var(--primary-color);
             margin-bottom: 10px;
+            font-size: 1.8rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
         }
         
+        .sync-status {
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        
+        .online {
+            color: #28a745;
+            border-right: 4px solid #28a745;
+        }
+        
+        .offline {
+            color: #dc3545;
+            border-right: 4px solid #dc3545;
+        }
+        
+        /* === التبويبات === */
         .tabs {
             display: flex;
             flex-wrap: wrap;
@@ -69,17 +96,22 @@
         }
         
         .tab-btn {
-            padding: 10px 20px;
+            padding: 12px 25px;
             background: var(--light-color);
             border: 2px solid #ddd;
             border-radius: var(--border-radius);
             cursor: pointer;
+            font-size: 1rem;
             font-weight: bold;
             transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
         
         .tab-btn:hover {
             background: #e9ecef;
+            transform: translateY(-2px);
         }
         
         .tab-btn.active {
@@ -88,389 +120,766 @@
             border-color: var(--primary-color);
         }
         
+        /* === محتوى التبويبات === */
         .tab-content {
             display: none;
-            background: white;
-            padding: 20px;
-            border-radius: var(--border-radius);
-            box-shadow: var(--shadow);
-            margin-bottom: 20px;
+            animation: fadeIn 0.5s ease;
         }
         
+        .tab-content.active {
+            display: block;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        /* === الكروت === */
         .card {
             background: white;
             border-radius: var(--border-radius);
-            padding: 20px;
+            padding: 25px;
             margin-bottom: 20px;
             box-shadow: var(--shadow);
+            border-top: 4px solid var(--primary-color);
         }
         
-        button {
-            padding: 10px 15px;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
+        .card h2 {
+            color: var(--primary-color);
+            margin-bottom: 15px;
+            font-size: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .subtitle {
+            color: #666;
+            margin-bottom: 20px;
+            font-size: 1rem;
+        }
+        
+        /* === النماذج === */
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
             font-weight: bold;
+            color: var(--dark-color);
         }
         
+        .form-control {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #ddd;
+            border-radius: var(--border-radius);
+            font-size: 1rem;
+            transition: border-color 0.3s ease;
+        }
+        
+        .form-control:focus {
+            outline: none;
+            border-color: var(--primary-color);
+        }
+        
+        /* === الأزرار === */
         .btn-primary {
             background: var(--primary-color);
             color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: var(--border-radius);
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
         }
         
+        .btn-primary:hover {
+            background: var(--secondary-color);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(67, 97, 238, 0.2);
+        }
+        
+        .btn-secondary {
+            background: var(--light-color);
+            color: var(--dark-color);
+            border: 2px solid #ddd;
+            padding: 10px 20px;
+            border-radius: var(--border-radius);
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-secondary:hover {
+            background: #e9ecef;
+            border-color: var(--primary-color);
+        }
+        
+        .btn-danger {
+            background: var(--danger-color);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: var(--border-radius);
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-danger:hover {
+            background: #e11d48;
+            transform: translateY(-2px);
+        }
+        
+        /* === الجداول === */
         table {
             width: 100%;
             border-collapse: collapse;
             margin: 20px 0;
-        }
-        
-        table th, table td {
-            padding: 10px;
-            border: 1px solid #ddd;
-            text-align: right;
+            background: white;
+            border-radius: var(--border-radius);
+            overflow: hidden;
+            box-shadow: var(--shadow);
         }
         
         table th {
             background: var(--primary-color);
             color: white;
+            padding: 15px;
+            text-align: right;
+            font-weight: bold;
         }
         
-        .sync-status {
-            padding: 10px;
+        table td {
+            padding: 12px 15px;
+            border-bottom: 1px solid #eee;
+        }
+        
+        table tr:hover {
             background: #f8f9fa;
+        }
+        
+        table tr:last-child td {
+            border-bottom: none;
+        }
+        
+        /* === أزرار الجدول الصغيرة === */
+        .btn-edit, .btn-delete {
+            padding: 6px 12px;
+            border: none;
             border-radius: 5px;
+            cursor: pointer;
+            margin: 0 3px;
+            font-size: 0.9rem;
+        }
+        
+        .btn-edit {
+            background: var(--accent-color);
+            color: white;
+        }
+        
+        .btn-delete {
+            background: var(--danger-color);
+            color: white;
+        }
+        
+        .btn-edit:hover, .btn-delete:hover {
+            opacity: 0.9;
+            transform: scale(1.05);
+        }
+        
+        /* === شبكة الإحصائيات === */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin: 20px 0;
+        }
+        
+        .stat-card {
+            background: white;
+            padding: 20px;
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow);
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            border-right: 4px solid var(--primary-color);
+        }
+        
+        .stat-icon {
+            background: var(--primary-color);
+            color: white;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+        }
+        
+        .stat-info h3 {
+            margin: 0;
+            font-size: 1.8rem;
+            color: var(--primary-color);
+        }
+        
+        .stat-info p {
+            margin: 5px 0 0 0;
+            color: #666;
+        }
+        
+        /* === أنماط المزامنة === */
+        .sync-container {
+            display: grid;
+            gap: 20px;
+        }
+        
+        .sync-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: var(--border-radius);
+            padding: 25px;
+            box-shadow: var(--shadow);
+        }
+        
+        .sync-header {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .sync-header i {
+            font-size: 2rem;
+            background: rgba(255, 255, 255, 0.2);
+            padding: 15px;
+            border-radius: 50%;
+        }
+        
+        .sync-body {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            border-radius: var(--border-radius);
+        }
+        
+        .sync-status p {
             margin: 10px 0;
-            border-right: 4px solid #dc3545;
+            font-size: 1.1rem;
+        }
+        
+        .online-status {
+            color: #4ade80;
+            font-weight: bold;
+        }
+        
+        .offline-status {
+            color: #f87171;
+            font-weight: bold;
+        }
+        
+        .sync-actions {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            justify-content: center;
+            padding: 20px;
+            background: white;
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow);
+        }
+        
+        .sync-instructions {
+            background: white;
+            padding: 25px;
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow);
+        }
+        
+        .sync-instructions ol {
+            padding-right: 20px;
+            margin: 15px 0;
+        }
+        
+        .sync-instructions li {
+            margin: 10px 0;
+            line-height: 1.6;
+        }
+        
+        /* === رسائل التنبيه === */
+        .alert {
+            padding: 15px;
+            border-radius: var(--border-radius);
+            margin: 15px 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .alert-success {
+            background: #d1fae5;
+            color: #065f46;
+            border-right: 4px solid #10b981;
+        }
+        
+        .alert-warning {
+            background: #fef3c7;
+            color: #92400e;
+            border-right: 4px solid #f59e0b;
+        }
+        
+        .alert-danger {
+            background: #fee2e2;
+            color: #991b1b;
+            border-right: 4px solid #ef4444;
+        }
+        
+        /* === التجاوب مع الشاشات الصغيرة === */
+        @media (max-width: 768px) {
+            .container {
+                padding: 10px;
+            }
+            
+            .tabs {
+                flex-direction: column;
+            }
+            
+            .tab-btn {
+                width: 100%;
+                justify-content: center;
+            }
+            
+            .sync-actions {
+                flex-direction: column;
+            }
+            
+            table {
+                display: block;
+                overflow-x: auto;
+            }
+            
+            header h1 {
+                font-size: 1.4rem;
+            }
+        }
+        
+        /* === تحميل === */
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+        }
+        
+        .loading i {
+            font-size: 2rem;
+            color: var(--primary-color);
         }
     </style>
+    
+    <!-- مكتبة Excel -->
+    <script src="https://cdn.sheetjs.com/xlsx-0.19.3/package/dist/xlsx.full.min.js"></script>
+    
+    <!-- Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
 </head>
 <body>
     <div class="container">
         <header>
             <h1><i class="fas fa-chalkboard-teacher"></i> برنامج إدارة الاختبارات للمعلم</h1>
             <div class="sync-status" id="syncStatus">
-                <i class="fas fa-sync-alt"></i> جار التحميل...
+                <i class="fas fa-sync-alt fa-spin"></i> جاري التحميل...
             </div>
+            <p id="currentDate"></p>
         </header>
         
-        <nav class="tabs" id="tabsContainer">
-            <button class="tab-btn active" data-tab="students">
-                <i class="fas fa-users"></i> إدارة الطلاب
-            </button>
-            <button class="tab-btn" data-tab="excel">
-                <i class="fas fa-file-excel"></i> استيراد من إكسل
-            </button>
-            <button class="tab-btn" data-tab="tests">
-                <i class="fas fa-file-alt"></i> إدارة الاختبارات
-            </button>
-            <button class="tab-btn" data-tab="results">
-                <i class="fas fa-chart-bar"></i> نتائج الاختبارات
-            </button>
-            <button class="tab-btn" data-tab="sync">
-                <i class="fas fa-cloud"></i> المزامنة
-            </button>
+        <!-- تبويبات التنقل -->
+        <nav class="tabs">
+            <button class="tab-btn active" data-tab="students"><i class="fas fa-users"></i> إدارة الطلاب</button>
+            <button class="tab-btn" data-tab="excel"><i class="fas fa-file-excel"></i> استيراد من إكسل</button>
+            <button class="tab-btn" data-tab="tests"><i class="fas fa-file-alt"></i> إدارة الاختبارات</button>
+            <button class="tab-btn" data-tab="results"><i class="fas fa-chart-bar"></i> نتائج الاختبارات</button>
+            <button class="tab-btn" data-tab="sync"><i class="fas fa-cloud"></i> المزامنة</button>
         </nav>
         
-        <!-- محتوى تبويب الطلاب -->
-        <div id="students" class="tab-content active">
+        <!-- تبويب الطلاب -->
+        <div class="tab-content active" id="students">
             <div class="card">
-                <h2><i class="fas fa-users"></i> إدارة الطلاب</h2>
-                
-                <div style="margin: 20px 0;">
-                    <form id="studentForm">
-                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 20px;">
-                            <div>
-                                <label>اسم الطالب</label>
-                                <input type="text" id="studentName" class="form-control" placeholder="أدخل اسم الطالب">
-                            </div>
-                            <div>
-                                <label>الصف</label>
-                                <input type="text" id="studentClass" class="form-control" placeholder="أدخل الصف">
-                            </div>
-                            <div>
-                                <label>رقم الهوية</label>
-                                <input type="text" id="studentId" class="form-control" placeholder="رقم الهوية">
-                            </div>
-                            <div>
-                                <label>رقم الجلوس</label>
-                                <input type="text" id="seatNumber" class="form-control" placeholder="رقم الجلوس">
-                            </div>
-                        </div>
-                        <button type="button" id="addStudentBtn" class="btn-primary">
-                            <i class="fas fa-user-plus"></i> إضافة طالب
-                        </button>
-                    </form>
+                <h2><i class="fas fa-user-plus"></i> إضافة طالب جديد</h2>
+                <div class="form-group">
+                    <label for="studentName">اسم الطالب:</label>
+                    <input type="text" id="studentName" class="form-control" placeholder="أدخل اسم الطالب">
                 </div>
                 
-                <div id="studentsTable">
-                    <!-- سيتم ملؤها بواسطة JavaScript -->
+                <div class="form-group">
+                    <label for="studentClass">الصف:</label>
+                    <input type="text" id="studentClass" class="form-control" placeholder="مثال: السادس أ">
                 </div>
                 
-                <div style="margin-top: 20px;">
-                    <button id="exportStudentsBtn" class="btn-primary">
+                <div class="form-group">
+                    <label for="studentId">رقم الهوية:</label>
+                    <input type="text" id="studentId" class="form-control" placeholder="أدخل رقم الهوية">
+                </div>
+                
+                <div class="form-group">
+                    <label for="seatNumber">رقم الجلوس:</label>
+                    <input type="text" id="seatNumber" class="form-control" placeholder="أدخل رقم الجلوس">
+                </div>
+                
+                <button class="btn-primary" onclick="addStudent()">
+                    <i class="fas fa-user-plus"></i> إضافة طالب
+                </button>
+            </div>
+            
+            <div class="card">
+                <h2><i class="fas fa-users"></i> قائمة الطلاب</h2>
+                <div id="studentsTable"></div>
+                <div class="sync-actions">
+                    <button class="btn-primary" onclick="exportStudentsToExcel()">
                         <i class="fas fa-download"></i> تصدير إلى Excel
                     </button>
                 </div>
             </div>
         </div>
         
-        <!-- محتوى تبويب إكسل -->
-        <div id="excel" class="tab-content">
+        <!-- تبويب استيراد Excel -->
+        <div class="tab-content" id="excel">
             <div class="card">
-                <h2><i class="fas fa-file-excel"></i> استيراد الطلاب من ملف Excel</h2>
-                <p>يمكنك رفع ملف Excel يحتوي على بيانات الطلاب (الاسم، الصف، رقم الهوية، رقم الجلوس)</p>
-                
-                <div style="margin: 30px 0; padding: 20px; background: #f8f9fa; border-radius: 10px;">
-                    <input type="file" id="excelFile" accept=".xlsx, .xls, .csv">
-                    <div id="importResult" style="margin-top: 15px;"></div>
+                <h2><i class="fas fa-file-import"></i> استيراد الطلاب من ملف Excel</h2>
+                <div class="form-group">
+                    <label for="excelFile">اختر ملف Excel:</label>
+                    <input type="file" id="excelFile" class="form-control" accept=".xlsx, .xls, .csv">
+                    <small>يجب أن يحتوي الملف على الأعمدة: الاسم، الصف، رقم الهوية، رقم الجلوس</small>
                 </div>
                 
-                <div style="margin-top: 20px;">
-                    <button onclick="downloadExcelTemplate()" class="btn-primary">
-                        <i class="fas fa-download"></i> تحميل نموذج Excel
-                    </button>
+                <button class="btn-primary" onclick="document.getElementById('excelFile').click()">
+                    <i class="fas fa-file-import"></i> استيراد الملف
+                </button>
+                
+                <div id="importResult"></div>
+                <div class="loading" id="importLoading">
+                    <i class="fas fa-spinner fa-spin"></i> جاري استيراد البيانات...
                 </div>
+            </div>
+            
+            <div class="card">
+                <h2><i class="fas fa-file-download"></i> تحميل نموذج Excel</h2>
+                <p>قم بتنزيل هذا النموذج واملأه ببيانات الطلاب، ثم قم برفعه مرة أخرى.</p>
+                <button class="btn-primary" onclick="downloadExcelTemplate()">
+                    <i class="fas fa-download"></i> تحميل النموذج
+                </button>
             </div>
         </div>
         
-        <!-- محتوى تبويب الاختبارات -->
-        <div id="tests" class="tab-content">
+        <!-- تبويب الاختبارات -->
+        <div class="tab-content" id="tests">
             <div class="card">
-                <h2><i class="fas fa-file-alt"></i> إدارة الاختبارات</h2>
-                
-                <form id="testForm" style="margin: 20px 0;">
-                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 20px;">
-                        <div>
-                            <label>اسم الاختبار</label>
-                            <input type="text" id="testName" class="form-control" placeholder="اسم الاختبار">
-                        </div>
-                        <div>
-                            <label>المادة</label>
-                            <input type="text" id="testSubject" class="form-control" placeholder="اسم المادة">
-                        </div>
-                        <div>
-                            <label>التاريخ</label>
-                            <input type="date" id="testDate" class="form-control">
-                        </div>
-                        <div>
-                            <label>الدرجة الكلية</label>
-                            <input type="number" id="testTotalScore" class="form-control" placeholder="100">
-                        </div>
-                        <div>
-                            <label>عدد الأسئلة</label>
-                            <input type="number" id="testQuestionsCount" class="form-control" placeholder="20">
-                        </div>
-                    </div>
-                    <button type="button" id="addTestBtn" class="btn-primary">
-                        <i class="fas fa-file-alt"></i> إضافة اختبار
-                    </button>
-                </form>
-                
-                <div id="testsTable">
-                    <!-- سيتم ملؤها بواسطة JavaScript -->
+                <h2><i class="fas fa-plus-circle"></i> إضافة اختبار جديد</h2>
+                <div class="form-group">
+                    <label for="testName">اسم الاختبار:</label>
+                    <input type="text" id="testName" class="form-control" placeholder="مثال: اختبار الفصل الأول">
                 </div>
+                
+                <div class="form-group">
+                    <label for="testSubject">المادة:</label>
+                    <input type="text" id="testSubject" class="form-control" placeholder="مثال: الرياضيات">
+                </div>
+                
+                <div class="form-group">
+                    <label for="testDate">تاريخ الاختبار:</label>
+                    <input type="date" id="testDate" class="form-control">
+                </div>
+                
+                <div class="form-group">
+                    <label for="testTotalScore">الدرجة الكلية:</label>
+                    <input type="number" id="testTotalScore" class="form-control" placeholder="مثال: 100">
+                </div>
+                
+                <div class="form-group">
+                    <label for="testQuestionsCount">عدد الأسئلة:</label>
+                    <input type="number" id="testQuestionsCount" class="form-control" placeholder="مثال: 20">
+                </div>
+                
+                <button class="btn-primary" onclick="addTest()">
+                    <i class="fas fa-file-alt"></i> إضافة اختبار
+                </button>
+            </div>
+            
+            <div class="card">
+                <h2><i class="fas fa-list-alt"></i> قائمة الاختبارات</h2>
+                <div id="testsTable"></div>
             </div>
         </div>
         
-        <!-- محتوى تبويب النتائج -->
-        <div id="results" class="tab-content">
+        <!-- تبويب النتائج -->
+        <div class="tab-content" id="results">
             <div class="card">
-                <h2><i class="fas fa-chart-bar"></i> نتائج الاختبارات</h2>
-                
-                <div id="resultsSummary" style="margin: 20px 0;">
-                    <!-- ملخص النتائج -->
-                </div>
-                
-                <div style="margin: 20px 0;">
-                    <select id="testFilter" class="form-control" style="width: 300px; margin-bottom: 15px;">
+                <h2><i class="fas fa-chart-pie"></i> الإحصائيات العامة</h2>
+                <div id="resultsSummary"></div>
+            </div>
+            
+            <div class="card">
+                <h2><i class="fas fa-filter"></i> تصفية النتائج</h2>
+                <div class="form-group">
+                    <label for="testFilter">اختر اختبار:</label>
+                    <select id="testFilter" class="form-control">
                         <option value="">جميع الاختبارات</option>
                     </select>
-                    
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>#</th>
-                                <th>اسم الطالب</th>
-                                <th>رقم الجلوس</th>
-                                <th>الاختبار</th>
-                                <th>الدرجة</th>
-                                <th>النسبة</th>
-                                <th>التاريخ</th>
-                            </tr>
-                        </thead>
-                        <tbody id="resultsTableBody">
-                            <!-- سيتم ملؤها بواسطة JavaScript -->
-                        </tbody>
-                    </table>
                 </div>
+            </div>
+            
+            <div class="card">
+                <h2><i class="fas fa-table"></i> جميع النتائج</h2>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>اسم الطالب</th>
+                            <th>رقم الجلوس</th>
+                            <th>الاختبار</th>
+                            <th>الدرجة</th>
+                            <th>النسبة</th>
+                            <th>التاريخ</th>
+                        </tr>
+                    </thead>
+                    <tbody id="resultsTableBody">
+                    </tbody>
+                </table>
                 
-                <div style="margin-top: 20px;">
-                    <button onclick="exportResultsToExcel()" class="btn-primary">
+                <div class="sync-actions">
+                    <button class="btn-primary" onclick="exportResultsToExcel()">
                         <i class="fas fa-download"></i> تصدير النتائج
                     </button>
-                    <button onclick="generateReport()" class="btn-primary">
-                        <i class="fas fa-print"></i> طباعة تقرير
+                    <button class="btn-secondary" onclick="generateReport()">
+                        <i class="fas fa-print"></i> طباعة التقرير
                     </button>
                 </div>
+                
+                <div id="reportOutput"></div>
             </div>
         </div>
         
-        <!-- محتوى تبويب المزامنة -->
-        <div id="sync" class="tab-content">
+        <!-- تبويب المزامنة -->
+        <div class="tab-content" id="sync">
             <div class="card">
-                <h2><i class="fas fa-cloud"></i> مزامنة البيانات</h2>
-                <p>مزامنة بياناتك مع السحابة للوصول إليها من أي جهاز</p>
+                <h2><i class="fas fa-cloud-upload-alt"></i> مزامنة البيانات مع السحابة</h2>
+                <p class="subtitle">مزامنة بياناتك مع السحابة للوصول إليها من أي جهاز</p>
                 
-                <div style="margin: 30px 0;">
-                    <button onclick="manualSync()" class="btn-primary" id="syncBtn" style="padding: 15px 30px; font-size: 16px;">
-                        <i class="fas fa-sync-alt"></i> مزامنة الآن
-                    </button>
-                </div>
-                
-                <div id="syncDetails" style="background: #f8f9fa; padding: 20px; border-radius: 10px;">
-                    <h3>تفاصيل المزامنة:</h3>
-                    <p><strong>الحالة:</strong> <span id="syncState">جاري التحقق...</span></p>
-                    <p><strong>آخر تحديث:</strong> <span id="lastUpdate">غير معروف</span></p>
-                    <p><strong>عدد الطلاب:</strong> <span id="studentCount">0</span></p>
-                    <p><strong>عدد الاختبارات:</strong> <span id="testCount">0</span></p>
+                <div class="sync-container">
+                    <div class="sync-card">
+                        <div class="sync-header">
+                            <i class="fas fa-cloud"></i>
+                            <h3>حالة المزامنة</h3>
+                        </div>
+                        <div class="sync-body">
+                            <div class="sync-status" id="syncDetails">
+                                <p><strong>الحالة:</strong> <span id="syncState">جاري التحقق...</span></p>
+                                <p><strong>آخر تحديث:</strong> <span id="lastUpdate">غير معروف</span></p>
+                                <p><strong>عدد الطلاب:</strong> <span id="studentCount">0</span></p>
+                                <p><strong>عدد الاختبارات:</strong> <span id="testCount">0</span></p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="sync-actions">
+                        <button onclick="manualSync()" class="btn-primary" id="syncBtn">
+                            <i class="fas fa-sync-alt"></i> مزامنة الآن
+                        </button>
+                        <button onclick="checkSyncStatus()" class="btn-secondary">
+                            <i class="fas fa-redo"></i> تحديث الحالة
+                        </button>
+                    </div>
+                    
+                    <div class="sync-instructions">
+                        <h4><i class="fas fa-info-circle"></i> كيف تعمل المزامنة:</h4>
+                        <ol>
+                            <li>بياناتك تخزن محلياً على جهازك</li>
+                            <li>عند المزامنة، ترسل إلى السحابة (Firebase)</li>
+                            <li>يمكنك الوصول للبيانات من أي جهاز</li>
+                            <li>التغييرات تظهر تلقائياً على جميع الأجهزة</li>
+                        </ol>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- مكتبات JavaScript -->
     <script>
-        // معلومات Firebase - ضع معلوماتك هنا
+        // ===== إعدادات Firebase =====
+        // 🔥 ضع معلومات Firebase الخاصة بك هنا 🔥
         const firebaseConfig = {
-            apiKey: "AIzaSyB_ZgwQhrIulXfbkR7tvPYqJjuUtMSuIX8", // ضع معلوماتك الحقيقية هنا
+            apiKey: "AIzaSyB_ZgwQhrIulXfbkR7tvPYqJjuUtMSuIX8",
             authDomain: "alhosin-2be4c.firebaseapp.com",
             projectId: "alhosin-2be4c",
             storageBucket: "alhosin-2be4c.firebasestorage.app",
             messagingSenderId: "13131661059",
             appId: "1:13131661059:web:bb3e7419e573e4c66ff336"
         };
-    </script>
-    
-    <!-- Firebase -->
-    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
-    
-    <!-- مكتبة Excel -->
-    <script src="https://cdn.sheetjs.com/xlsx-0.19.3/package/dist/xlsx.full.min.js"></script>
-    
-    <!-- ملفات التطبيق -->
-    <script>
-        // ==================== app.js ====================
-        document.addEventListener('DOMContentLoaded', function() {
-            console.log('✅ التطبيق يعمل...');
-            
-            // تهيئة التبويبات
-            const tabBtns = document.querySelectorAll('.tab-btn');
-            const tabContents = document.querySelectorAll('.tab-content');
-            
-            tabBtns.forEach(btn => {
-                btn.addEventListener('click', function() {
-                    console.log('تم النقر على تبويب:', this.getAttribute('data-tab'));
-                    
-                    // إزالة النشاط من جميع الأزرار
-                    tabBtns.forEach(b => b.classList.remove('active'));
-                    // إخفاء جميع المحتويات
-                    tabContents.forEach(c => c.classList.remove('active'));
-                    
-                    // تفعيل التبويب المحدد
-                    this.classList.add('active');
-                    const tabId = this.getAttribute('data-tab');
-                    const tabElement = document.getElementById(tabId);
-                    if (tabElement) {
-                        tabElement.classList.add('active');
-                    }
-                });
-            });
-            
-            // تفعيل التبويب الأول
-            if (tabBtns.length > 0) {
-                const firstTab = tabBtns[0];
-                firstTab.click();
-            }
-            
-            // تهيئة Firebase
-            initFirebase();
-            
-            // تحميل البيانات الأولية
-            loadInitialData();
-        });
-
-        function loadInitialData() {
-            console.log('جاري تحميل البيانات...');
-            // يمكنك إضافة المزيد من التهيئة هنا
-        }
-
-        // ==================== firebase-init.js ====================
+        
+        // ===== المتغيرات العامة =====
         let db;
         let isOnline = false;
-
+        let students = JSON.parse(localStorage.getItem('students')) || [];
+        let tests = JSON.parse(localStorage.getItem('tests')) || [];
+        let results = JSON.parse(localStorage.getItem('results')) || [];
+        
+        // ===== تهيئة Firebase =====
         async function initFirebase() {
             try {
-                // فقط إذا كانت معلومات Firebase موجودة
-                if (firebaseConfig.apiKey && firebaseConfig.apiKey !== "AIzaSyA1EXAMPLEEXAMPLEEXAMPLE") {
-                    firebase.initializeApp(firebaseConfig);
-                    db = firebase.firestore();
-                    
-                    // اختبار الاتصال
-                    await db.collection('test').doc('connection').set({
-                        test: true,
-                        timestamp: new Date()
-                    });
-                    
-                    isOnline = true;
-                    updateSyncStatus(true, '✓ متصل بالسحابة');
-                    
-                    // تحميل البيانات من السحابة
-                    await loadFromCloud();
-                } else {
-                    console.log('⚠️ معلومات Firebase غير مضبوطة، العمل في الوضع المحلي');
-                    updateSyncStatus(false, '✗ الوضع المحلي فقط');
-                }
+                console.log('🚀 بدء تهيئة Firebase...');
+                firebase.initializeApp(firebaseConfig);
+                db = firebase.firestore();
+                
+                // اختبار الاتصال
+                await db.collection('connectionTest').doc('test').set({
+                    timestamp: new Date(),
+                    status: 'connected'
+                });
+                
+                isOnline = true;
+                updateSyncStatus(true, '✓ متصل بالسحابة');
+                console.log('✅ تم الاتصال بـ Firebase بنجاح');
+                
+                // تحميل البيانات من السحابة
+                await loadFromCloud();
+                
             } catch (error) {
-                console.log('❌ لا يوجد اتصال بالسحابة:', error.message);
+                console.log('⚠️ لا يوجد اتصال بالسحابة، استخدام التخزين المحلي');
+                console.error('تفاصيل الخطأ:', error);
                 isOnline = false;
-                updateSyncStatus(false, '✗ غير متصل - الوضع المحلي');
+                updateSyncStatus(false, '✗ غير متصل بالسحابة - الوضع المحلي');
             }
         }
-
+        
+        // ===== دوال المزامنة =====
         function updateSyncStatus(online, message) {
             const statusDiv = document.getElementById('syncStatus');
             if (statusDiv) {
                 statusDiv.innerHTML = `<i class="fas fa-${online ? 'cloud' : 'wifi'}"></i> ${message}`;
+                statusDiv.className = `sync-status ${online ? 'online' : 'offline'}`;
+            }
+            isOnline = online;
+        }
+        
+        async function saveToCloud(dataType, data) {
+            if (!isOnline) return false;
+            
+            try {
+                await db.collection('schoolData').doc(dataType).set({
+                    data: data,
+                    lastUpdated: new Date(),
+                    updatedBy: 'teacher'
+                });
+                console.log(`✅ تم حفظ ${dataType} في السحابة`);
+                return true;
+            } catch (error) {
+                console.error(`❌ خطأ في حفظ ${dataType}:`, error);
+                return false;
             }
         }
-
-        // ==================== students.js ====================
-        document.addEventListener('DOMContentLoaded', function() {
-            // ربط حدث إضافة طالب
-            const addStudentBtn = document.getElementById('addStudentBtn');
-            if (addStudentBtn) {
-                addStudentBtn.addEventListener('click', addStudent);
+        
+        async function loadFromCloud() {
+            if (!isOnline) return;
+            
+            try {
+                // تحميل الطلاب
+                const studentsDoc = await db.collection('schoolData').doc('students').get();
+                if (studentsDoc.exists) {
+                    const cloudStudents = studentsDoc.data().data || [];
+                    if (cloudStudents.length > 0) {
+                        students = cloudStudents;
+                        localStorage.setItem('students', JSON.stringify(students));
+                        console.log('✅ تم تحميل الطلاب من السحابة');
+                    }
+                }
+                
+                // تحميل الاختبارات
+                const testsDoc = await db.collection('schoolData').doc('tests').get();
+                if (testsDoc.exists) {
+                    const cloudTests = testsDoc.data().data || [];
+                    if (cloudTests.length > 0) {
+                        tests = cloudTests;
+                        localStorage.setItem('tests', JSON.stringify(tests));
+                        console.log('✅ تم تحميل الاختبارات من السحابة');
+                    }
+                }
+                
+                // تحميل النتائج
+                const resultsDoc = await db.collection('schoolData').doc('results').get();
+                if (resultsDoc.exists) {
+                    const cloudResults = resultsDoc.data().data || [];
+                    if (cloudResults.length > 0) {
+                        results = cloudResults;
+                        localStorage.setItem('results', JSON.stringify(results));
+                        console.log('✅ تم تحميل النتائج من السحابة');
+                    }
+                }
+                
+            } catch (error) {
+                console.error('❌ خطأ في تحميل البيانات:', error);
+            }
+        }
+        
+        async function manualSync() {
+            const syncBtn = document.getElementById('syncBtn');
+            const originalText = syncBtn.innerHTML;
+            
+            syncBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري المزامنة...';
+            syncBtn.disabled = true;
+            
+            try {
+                if (isOnline) {
+                    await saveToCloud('students', students);
+                    await saveToCloud('tests', tests);
+                    await saveToCloud('results', results);
+                    
+                    alert('✅ تمت المزامنة بنجاح!');
+                    checkSyncStatus();
+                } else {
+                    alert('⚠️ لا يوجد اتصال بالإنترنت للمزامنة');
+                }
+            } catch (error) {
+                console.error('❌ خطأ في المزامنة:', error);
+                alert('❌ فشلت المزامنة: ' + error.message);
+            } finally {
+                syncBtn.innerHTML = originalText;
+                syncBtn.disabled = false;
+            }
+        }
+        
+        function checkSyncStatus() {
+            const syncState = document.getElementById('syncState');
+            const studentCount = document.getElementById('studentCount');
+            const testCount = document.getElementById('testCount');
+            const lastUpdate = document.getElementById('lastUpdate');
+            
+            if (isOnline) {
+                syncState.textContent = 'متصل بالسحابة';
+                syncState.className = 'online-status';
+            } else {
+                syncState.textContent = 'غير متصل - وضع محلي';
+                syncState.className = 'offline-status';
             }
             
-            // ربط حدث تصدير الطلاب
-            const exportStudentsBtn = document.getElementById('exportStudentsBtn');
-            if (exportStudentsBtn) {
-                exportStudentsBtn.addEventListener('click', exportStudentsToExcel);
-            }
-            
-            // عرض الطلاب
-            displayStudents();
-        });
-
+            studentCount.textContent = students.length;
+            testCount.textContent = tests.length;
+            lastUpdate.textContent = new Date().toLocaleString('ar-SA');
+        }
+        
+        // ===== إدارة الطلاب =====
         function displayStudents() {
             const studentsTable = document.getElementById('studentsTable');
             if (!studentsTable) return;
             
-            const students = JSON.parse(localStorage.getItem('students')) || [];
-            
             let html = `
-                <h3 style="margin: 20px 0;">قائمة الطلاب (${students.length})</h3>
                 <table>
                     <thead>
                         <tr>
@@ -503,10 +912,10 @@
                             <td>${student.id}</td>
                             <td>${student.seatNumber}</td>
                             <td>
-                                <button onclick="editStudent(${index})" style="background: #28a745; color: white; padding: 5px 10px; margin: 2px;">
+                                <button onclick="editStudent(${index})" class="btn-edit">
                                     <i class="fas fa-edit"></i>
                                 </button>
-                                <button onclick="deleteStudent(${index})" style="background: #dc3545; color: white; padding: 5px 10px; margin: 2px;">
+                                <button onclick="deleteStudent(${index})" class="btn-delete">
                                     <i class="fas fa-trash"></i>
                                 </button>
                             </td>
@@ -518,11 +927,14 @@
             html += `
                     </tbody>
                 </table>
+                <div class="summary">
+                    <p><i class="fas fa-users"></i> إجمالي الطلاب: ${students.length}</p>
+                </div>
             `;
             
             studentsTable.innerHTML = html;
         }
-
+        
         function addStudent() {
             const name = document.getElementById('studentName').value.trim();
             const studentClass = document.getElementById('studentClass').value.trim();
@@ -542,9 +954,8 @@
                 createdAt: new Date().toISOString()
             };
             
-            const students = JSON.parse(localStorage.getItem('students')) || [];
             students.push(newStudent);
-            localStorage.setItem('students', JSON.stringify(students));
+            saveStudentsLocally();
             
             // مسح الحقول
             document.getElementById('studentName').value = '';
@@ -552,12 +963,28 @@
             document.getElementById('studentId').value = '';
             document.getElementById('seatNumber').value = '';
             
-            alert('✅ تم إضافة الطالب بنجاح');
             displayStudents();
+            alert('✅ تم إضافة الطالب بنجاح');
         }
-
+        
+        async function saveStudentsLocally() {
+            localStorage.setItem('students', JSON.stringify(students));
+            
+            if (isOnline) {
+                await saveToCloud('students', students);
+            }
+        }
+        
+        async function deleteStudent(index) {
+            if (confirm('هل أنت متأكد من حذف هذا الطالب؟')) {
+                students.splice(index, 1);
+                await saveStudentsLocally();
+                displayStudents();
+                alert('✅ تم حذف الطالب بنجاح');
+            }
+        }
+        
         function editStudent(index) {
-            const students = JSON.parse(localStorage.getItem('students')) || [];
             const student = students[index];
             
             document.getElementById('studentName').value = student.name;
@@ -566,12 +993,12 @@
             document.getElementById('seatNumber').value = student.seatNumber;
             
             // تغيير زر الإضافة إلى تحديث
-            const addBtn = document.getElementById('addStudentBtn');
+            const addBtn = document.querySelector('#students .btn-primary');
             addBtn.innerHTML = '<i class="fas fa-sync"></i> تحديث الطالب';
             addBtn.onclick = function() { updateStudent(index); };
         }
-
-        function updateStudent(index) {
+        
+        async function updateStudent(index) {
             const name = document.getElementById('studentName').value.trim();
             const studentClass = document.getElementById('studentClass').value.trim();
             const studentId = document.getElementById('studentId').value.trim();
@@ -582,7 +1009,6 @@
                 return;
             }
             
-            const students = JSON.parse(localStorage.getItem('students')) || [];
             students[index] = {
                 ...students[index],
                 name,
@@ -592,7 +1018,7 @@
                 updatedAt: new Date().toISOString()
             };
             
-            localStorage.setItem('students', JSON.stringify(students));
+            await saveStudentsLocally();
             
             // إعادة تعيين النموذج
             document.getElementById('studentName').value = '';
@@ -600,73 +1026,762 @@
             document.getElementById('studentId').value = '';
             document.getElementById('seatNumber').value = '';
             
-            const addBtn = document.getElementById('addStudentBtn');
+            const addBtn = document.querySelector('#students .btn-primary');
             addBtn.innerHTML = '<i class="fas fa-user-plus"></i> إضافة طالب';
             addBtn.onclick = addStudent;
             
             displayStudents();
             alert('✅ تم تحديث بيانات الطالب بنجاح');
         }
-
-        function deleteStudent(index) {
-            if (confirm('هل أنت متأكد من حذف هذا الطالب؟')) {
-                const students = JSON.parse(localStorage.getItem('students')) || [];
-                students.splice(index, 1);
-                localStorage.setItem('students', JSON.stringify(students));
-                displayStudents();
-                alert('✅ تم حذف الطالب بنجاح');
-            }
-        }
-
+        
         function exportStudentsToExcel() {
-            const students = JSON.parse(localStorage.getItem('students')) || [];
-            
             if (students.length === 0) {
                 alert('❌ لا يوجد طلاب لتصديرهم');
                 return;
             }
             
-            const data = [
-                ['الاسم', 'الصف', 'رقم الهوية', 'رقم الجلوس']
-            ];
+            let csv = 'الاسم,الصف,رقم الهوية,رقم الجلوس\n';
             
             students.forEach(student => {
-                data.push([student.name, student.class, student.id, student.seatNumber]);
+                csv += `${student.name},${student.class},${student.id},${student.seatNumber}\n`;
+            });
+            
+            const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = 'الطلاب_' + new Date().toISOString().split('T')[0] + '.csv';
+            link.click();
+        }
+        
+        // ===== إدارة الاختبارات =====
+        function displayTests() {
+            const testsTable = document.getElementById('testsTable');
+            if (!testsTable) return;
+            
+            let html = `
+                <table>
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>اسم الاختبار</th>
+                            <th>المادة</th>
+                            <th>التاريخ</th>
+                            <th>الدرجة الكلية</th>
+                            <th>عدد الأسئلة</th>
+                            <th>الإجراءات</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+            
+            if (tests.length === 0) {
+                html += `
+                    <tr>
+                        <td colspan="7" style="text-align: center; padding: 20px;">
+                            <i class="fas fa-file-alt"></i> لا يوجد اختبارات مسجلة
+                        </td>
+                    </tr>
+                `;
+            } else {
+                tests.forEach((test, index) => {
+                    html += `
+                        <tr>
+                            <td>${index + 1}</td>
+                            <td>${test.name}</td>
+                            <td>${test.subject}</td>
+                            <td>${test.date}</td>
+                            <td>${test.totalScore}</td>
+                            <td>${test.questionsCount}</td>
+                            <td>
+                                <button onclick="editTest(${index})" class="btn-edit">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button onclick="deleteTest(${index})" class="btn-delete">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                                <button onclick="enterTestResults(${index})" class="btn-primary">
+                                    <i class="fas fa-keyboard"></i> إدخال النتائج
+                                </button>
+                            </td>
+                        </tr>
+                    `;
+                });
+            }
+            
+            html += `
+                    </tbody>
+                </table>
+                <div class="summary">
+                    <p><i class="fas fa-file-alt"></i> إجمالي الاختبارات: ${tests.length}</p>
+                </div>
+            `;
+            
+            testsTable.innerHTML = html;
+        }
+        
+        function addTest() {
+            const name = document.getElementById('testName').value.trim();
+            const subject = document.getElementById('testSubject').value.trim();
+            const date = document.getElementById('testDate').value;
+            const totalScore = document.getElementById('testTotalScore').value;
+            const questionsCount = document.getElementById('testQuestionsCount').value;
+            
+            if (!name || !subject || !date || !totalScore || !questionsCount) {
+                alert('❌ الرجاء ملء جميع الحقول');
+                return;
+            }
+            
+            const newTest = {
+                id: Date.now(),
+                name,
+                subject,
+                date,
+                totalScore: parseInt(totalScore),
+                questionsCount: parseInt(questionsCount),
+                createdAt: new Date().toISOString()
+            };
+            
+            tests.push(newTest);
+            saveTestsLocally();
+            
+            // مسح الحقول
+            document.getElementById('testName').value = '';
+            document.getElementById('testSubject').value = '';
+            document.getElementById('testDate').value = '';
+            document.getElementById('testTotalScore').value = '';
+            document.getElementById('testQuestionsCount').value = '';
+            
+            displayTests();
+            alert('✅ تم إضافة الاختبار بنجاح');
+        }
+        
+        async function saveTestsLocally() {
+            localStorage.setItem('tests', JSON.stringify(tests));
+            
+            if (isOnline) {
+                await saveToCloud('tests', tests);
+            }
+        }
+        
+        async function deleteTest(index) {
+            if (confirm('هل أنت متأكد من حذف هذا الاختبار؟')) {
+                tests.splice(index, 1);
+                await saveTestsLocally();
+                displayTests();
+                alert('✅ تم حذف الاختبار بنجاح');
+            }
+        }
+        
+        function editTest(index) {
+            const test = tests[index];
+            
+            document.getElementById('testName').value = test.name;
+            document.getElementById('testSubject').value = test.subject;
+            document.getElementById('testDate').value = test.date;
+            document.getElementById('testTotalScore').value = test.totalScore;
+            document.getElementById('testQuestionsCount').value = test.questionsCount;
+            
+            // تغيير الزر
+            const addBtn = document.querySelector('#tests .btn-primary');
+            addBtn.innerHTML = '<i class="fas fa-sync"></i> تحديث الاختبار';
+            addBtn.onclick = function() { updateTest(index); };
+        }
+        
+        async function updateTest(index) {
+            const name = document.getElementById('testName').value.trim();
+            const subject = document.getElementById('testSubject').value.trim();
+            const date = document.getElementById('testDate').value;
+            const totalScore = document.getElementById('testTotalScore').value;
+            const questionsCount = document.getElementById('testQuestionsCount').value;
+            
+            if (!name || !subject || !date || !totalScore || !questionsCount) {
+                alert('❌ الرجاء ملء جميع الحقول');
+                return;
+            }
+            
+            tests[index] = {
+                ...tests[index],
+                name,
+                subject,
+                date,
+                totalScore: parseInt(totalScore),
+                questionsCount: parseInt(questionsCount),
+                updatedAt: new Date().toISOString()
+            };
+            
+            await saveTestsLocally();
+            
+            // إعادة تعيين النموذج
+            document.getElementById('testName').value = '';
+            document.getElementById('testSubject').value = '';
+            document.getElementById('testDate').value = '';
+            document.getElementById('testTotalScore').value = '';
+            document.getElementById('testQuestionsCount').value = '';
+            
+            const addBtn = document.querySelector('#tests .btn-primary');
+            addBtn.innerHTML = '<i class="fas fa-file-alt"></i> إضافة اختبار';
+            addBtn.onclick = addTest;
+            
+            displayTests();
+            alert('✅ تم تحديث الاختبار بنجاح');
+        }
+        
+        function enterTestResults(testIndex) {
+            const test = tests[testIndex];
+            
+            if (students.length === 0) {
+                alert('❌ لا يوجد طلاب لإدخال النتائج لهم');
+                return;
+            }
+            
+            let html = `
+                <div class="results-entry">
+                    <h3><i class="fas fa-keyboard"></i> إدخال نتائج اختبار: ${test.name}</h3>
+                    <p>المادة: ${test.subject} | التاريخ: ${test.date} | الدرجة الكلية: ${test.totalScore}</p>
+                    
+                    <table class="results-table">
+                        <thead>
+                            <tr>
+                                <th>الاسم</th>
+                                <th>رقم الجلوس</th>
+                                <th>الدرجة</th>
+                                <th>النسبة</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+            `;
+            
+            students.forEach((student, index) => {
+                html += `
+                    <tr>
+                        <td>${student.name}</td>
+                        <td>${student.seatNumber}</td>
+                        <td>
+                            <input type="number" 
+                                   id="score_${index}" 
+                                   min="0" 
+                                   max="${test.totalScore}"
+                                   placeholder="0-${test.totalScore}"
+                                   onchange="calculatePercentage(${index}, ${test.totalScore})">
+                        </td>
+                        <td>
+                            <span id="percentage_${index}">0%</span>
+                        </td>
+                    </tr>
+                `;
+            });
+            
+            html += `
+                        </tbody>
+                    </table>
+                    
+                    <div class="sync-actions">
+                        <button onclick="saveTestResults(${testIndex})" class="btn-primary">
+                            <i class="fas fa-save"></i> حفظ النتائج
+                        </button>
+                        <button onclick="displayTests()" class="btn-secondary">
+                            <i class="fas fa-times"></i> إلغاء
+                        </button>
+                    </div>
+                </div>
+            `;
+            
+            const testsTable = document.getElementById('testsTable');
+            if (testsTable) {
+                testsTable.innerHTML = html;
+            }
+        }
+        
+        function calculatePercentage(index, totalScore) {
+            const scoreInput = document.getElementById(`score_${index}`);
+            const percentageSpan = document.getElementById(`percentage_${index}`);
+            
+            if (scoreInput && percentageSpan) {
+                const score = parseFloat(scoreInput.value) || 0;
+                const percentage = totalScore > 0 ? ((score / totalScore) * 100).toFixed(1) : 0;
+                percentageSpan.textContent = `${percentage}%`;
+            }
+        }
+        
+        async function saveTestResults(testIndex) {
+            const test = tests[testIndex];
+            const newResults = [];
+            let hasResults = false;
+            
+            for (let i = 0; i < students.length; i++) {
+                const scoreInput = document.getElementById(`score_${i}`);
+                const score = scoreInput ? parseFloat(scoreInput.value) : null;
+                
+                if (score !== null && !isNaN(score)) {
+                    newResults.push({
+                        studentId: students[i].id,
+                        studentName: students[i].name,
+                        seatNumber: students[i].seatNumber,
+                        testId: test.id,
+                        testName: test.name,
+                        score: score,
+                        percentage: ((score / test.totalScore) * 100).toFixed(1),
+                        date: test.date
+                    });
+                    hasResults = true;
+                }
+            }
+            
+            if (!hasResults) {
+                alert('❌ لم يتم إدخال أي نتائج');
+                return;
+            }
+            
+            // دمج مع النتائج الحالية
+            const filteredResults = results.filter(r => r.testId !== test.id);
+            results = [...filteredResults, ...newResults];
+            
+            localStorage.setItem('results', JSON.stringify(results));
+            
+            if (isOnline) {
+                await saveToCloud('results', results);
+            }
+            
+            alert(`✅ تم حفظ نتائج ${newResults.length} طالب بنجاح`);
+            displayTests();
+        }
+        
+        // ===== إدارة النتائج =====
+        function displayResultsSummary() {
+            const summaryElement = document.getElementById('resultsSummary');
+            if (!summaryElement) return;
+            
+            let html = `
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-users"></i>
+                        </div>
+                        <div class="stat-info">
+                            <h3>${students.length}</h3>
+                            <p>إجمالي الطلاب</p>
+                        </div>
+                    </div>
+                    
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-file-alt"></i>
+                        </div>
+                        <div class="stat-info">
+                            <h3>${tests.length}</h3>
+                            <p>الاختبارات</p>
+                        </div>
+                    </div>
+                    
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-chart-line"></i>
+                        </div>
+                        <div class="stat-info">
+                            <h3>${results.length}</h3>
+                            <p>سجل النتائج</p>
+                        </div>
+                    </div>
+                    
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-percentage"></i>
+                        </div>
+                        <div class="stat-info">
+                            <h3>${calculateAverageScore()}%</h3>
+                            <p>متوسط النتائج</p>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            summaryElement.innerHTML = html;
+        }
+        
+        function loadResultsData() {
+            const testSelect = document.getElementById('testFilter');
+            if (testSelect) {
+                testSelect.innerHTML = '<option value="">جميع الاختبارات</option>';
+                
+                tests.forEach(test => {
+                    const option = document.createElement('option');
+                    option.value = test.id;
+                    option.textContent = `${test.name} (${test.date})`;
+                    testSelect.appendChild(option);
+                });
+                
+                testSelect.addEventListener('change', filterResults);
+            }
+            
+            displayAllResults();
+        }
+        
+        function displayAllResults() {
+            const tableBody = document.getElementById('resultsTableBody');
+            if (!tableBody) return;
+            
+            if (results.length === 0) {
+                tableBody.innerHTML = `
+                    <tr>
+                        <td colspan="7" class="text-center">
+                            <i class="fas fa-chart-bar"></i> لا توجد نتائج مسجلة
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+            
+            let html = '';
+            results.forEach((result, index) => {
+                html += `
+                    <tr>
+                        <td>${index + 1}</td>
+                        <td>${result.studentName}</td>
+                        <td>${result.seatNumber}</td>
+                        <td>${result.testName}</td>
+                        <td>${result.score}</td>
+                        <td>${result.percentage}%</td>
+                        <td>${result.date}</td>
+                    </tr>
+                `;
+            });
+            
+            tableBody.innerHTML = html;
+        }
+        
+        function filterResults() {
+            const testSelect = document.getElementById('testFilter');
+            const testId = testSelect.value;
+            
+            if (!testId) {
+                displayAllResults();
+                return;
+            }
+            
+            const filteredResults = results.filter(result => result.testId == testId);
+            const tableBody = document.getElementById('resultsTableBody');
+            
+            if (filteredResults.length === 0) {
+                tableBody.innerHTML = `
+                    <tr>
+                        <td colspan="7" class="text-center">
+                            <i class="fas fa-chart-bar"></i> لا توجد نتائج لهذا الاختبار
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+            
+            let html = '';
+            filteredResults.forEach((result, index) => {
+                html += `
+                    <tr>
+                        <td>${index + 1}</td>
+                        <td>${result.studentName}</td>
+                        <td>${result.seatNumber}</td>
+                        <td>${result.testName}</td>
+                        <td>${result.score}</td>
+                        <td>${result.percentage}%</td>
+                        <td>${result.date}</td>
+                    </tr>
+                `;
+            });
+            
+            tableBody.innerHTML = html;
+        }
+        
+        function calculateAverageScore() {
+            if (results.length === 0) return 0;
+            
+            const total = results.reduce((sum, result) => {
+                return sum + parseFloat(result.percentage);
+            }, 0);
+            
+            return (total / results.length).toFixed(1);
+        }
+        
+        function exportResultsToExcel() {
+            if (results.length === 0) {
+                alert('❌ لا توجد نتائج لتصديرها');
+                return;
+            }
+            
+            const data = [
+                ['الاسم', 'رقم الجلوس', 'الاختبار', 'الدرجة', 'النسبة', 'التاريخ']
+            ];
+            
+            results.forEach(result => {
+                data.push([
+                    result.studentName,
+                    result.seatNumber,
+                    result.testName,
+                    result.score,
+                    result.percentage + '%',
+                    result.date
+                ]);
             });
             
             const ws = XLSX.utils.aoa_to_sheet(data);
             const wb = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(wb, ws, 'الطلاب');
+            XLSX.utils.book_append_sheet(wb, ws, 'النتائج');
             
             const date = new Date().toISOString().split('T')[0];
-            XLSX.writeFile(wb, `الطلاب_${date}.xlsx`);
+            XLSX.writeFile(wb, `نتائج_الاختبارات_${date}.xlsx`);
         }
-
-        // ==================== functions for other tabs ====================
-        function manualSync() {
-            alert('⚠️ هذه الميزة قيد التطوير. تأكد من إعدادات Firebase.');
+        
+        function generateReport() {
+            let reportHTML = `
+                <div class="report">
+                    <h3><i class="fas fa-chart-pie"></i> التقرير الإحصائي</h3>
+                    <div class="report-date">${new Date().toLocaleDateString('ar-SA')}</div>
+                    
+                    <div class="report-section">
+                        <h4>معلومات عامة:</h4>
+                        <p>عدد الطلاب: ${students.length}</p>
+                        <p>عدد الاختبارات: ${tests.length}</p>
+                        <p>عدد النتائج المسجلة: ${results.length}</p>
+                        <p>متوسط النتائج: ${calculateAverageScore()}%</p>
+                    </div>
+            `;
+            
+            // تحليل لكل اختبار
+            tests.forEach(test => {
+                const testResults = results.filter(r => r.testId === test.id);
+                if (testResults.length > 0) {
+                    const scores = testResults.map(r => parseFloat(r.score));
+                    const maxScore = Math.max(...scores);
+                    const minScore = Math.min(...scores);
+                    const avgScore = (scores.reduce((a, b) => a + b, 0) / scores.length).toFixed(1);
+                    
+                    reportHTML += `
+                        <div class="test-report">
+                            <h5>${test.name} (${test.date})</h5>
+                            <p>عدد الطلاب: ${testResults.length}</p>
+                            <p>أعلى درجة: ${maxScore}/${test.totalScore}</p>
+                            <p>أقل درجة: ${minScore}/${test.totalScore}</p>
+                            <p>المتوسط: ${avgScore}/${test.totalScore}</p>
+                        </div>
+                    `;
+                }
+            });
+            
+            reportHTML += `</div>`;
+            
+            const reportElement = document.getElementById('reportOutput');
+            if (reportElement) {
+                reportElement.innerHTML = reportHTML;
+                
+                // طباعة التقرير
+                setTimeout(() => {
+                    window.print();
+                }, 500);
+            }
         }
-
+        
+        // ===== استيراد Excel =====
+        async function handleExcelImport(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            
+            const loading = document.getElementById('importLoading');
+            if (loading) loading.style.display = 'block';
+            
+            try {
+                const newStudents = await parseExcelFile(file);
+                
+                if (newStudents.length > 0) {
+                    // دمج مع الطلاب الحاليين
+                    students = [...students, ...newStudents];
+                    await saveStudentsLocally();
+                    
+                    displayStudents();
+                    
+                    const resultDiv = document.getElementById('importResult');
+                    if (resultDiv) {
+                        resultDiv.innerHTML = `
+                            <div class="alert alert-success">
+                                <i class="fas fa-check-circle"></i>
+                                تم استيراد ${newStudents.length} طالب بنجاح
+                            </div>
+                        `;
+                    }
+                    
+                    checkSyncStatus();
+                }
+            } catch (error) {
+                console.error('❌ خطأ في استيراد الملف:', error);
+                alert('❌ فشل استيراد الملف: ' + error.message);
+            } finally {
+                if (loading) loading.style.display = 'none';
+                event.target.value = '';
+            }
+        }
+        
+        async function parseExcelFile(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                
+                reader.onload = function(e) {
+                    try {
+                        const data = new Uint8Array(e.target.result);
+                        const workbook = XLSX.read(data, { type: 'array' });
+                        const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+                        const jsonData = XLSX.utils.sheet_to_json(firstSheet, { header: 1 });
+                        
+                        const newStudents = [];
+                        
+                        for (let i = 1; i < jsonData.length; i++) {
+                            const row = jsonData[i];
+                            if (row && row.length >= 4) {
+                                newStudents.push({
+                                    name: row[0] || '',
+                                    class: row[1] || '',
+                                    id: row[2]?.toString() || '',
+                                    seatNumber: row[3]?.toString() || '',
+                                    createdAt: new Date().toISOString()
+                                });
+                            }
+                        }
+                        
+                        resolve(newStudents);
+                    } catch (error) {
+                        reject(error);
+                    }
+                };
+                
+                reader.onerror = reject;
+                reader.readAsArrayBuffer(file);
+            });
+        }
+        
         function downloadExcelTemplate() {
             const template = [
                 ['الاسم', 'الصف', 'رقم الهوية', 'رقم الجلوس'],
                 ['أحمد محمد', 'السادس أ', '123456', '1'],
-                ['فاطمة علي', 'السادس ب', '123457', '2']
+                ['فاطمة علي', 'السادس ب', '123457', '2'],
+                ['خالد سعد', 'السابع أ', '123458', '3']
             ];
             
-            const ws = XLSX.utils.aoa_to_sheet(template);
-            const wb = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(wb, ws, 'الطلاب');
-            XLSX.writeFile(wb, 'نموذج_الطلاب.xlsx');
+            const worksheet = XLSX.utils.aoa_to_sheet(template);
+            const workbook = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(workbook, worksheet, 'الطلاب');
+            
+            XLSX.writeFile(workbook, 'نموذج_الطلاب.xlsx');
         }
-
-        function exportResultsToExcel() {
-            alert('⚠️ هذه الميزة قيد التطوير');
+        
+        // ===== إدارة التبويبات =====
+        function initTabs() {
+            const tabBtns = document.querySelectorAll('.tab-btn');
+            const tabContents = document.querySelectorAll('.tab-content');
+            
+            // إخفاء جميع المحتويات أولاً
+            tabContents.forEach(content => {
+                content.style.display = 'none';
+            });
+            
+            // إضافة حدث لكل زر
+            tabBtns.forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const tabId = this.getAttribute('data-tab');
+                    
+                    // إزالة النشاط من جميع الأزرار
+                    tabBtns.forEach(b => b.classList.remove('active'));
+                    
+                    // إخفاء جميع المحتويات
+                    tabContents.forEach(c => {
+                        c.style.display = 'none';
+                        c.classList.remove('active');
+                    });
+                    
+                    // تفعيل الزر الحالي
+                    this.classList.add('active');
+                    
+                    // إظهار المحتوى المحدد
+                    const targetTab = document.getElementById(tabId);
+                    if (targetTab) {
+                        targetTab.style.display = 'block';
+                        targetTab.classList.add('active');
+                        
+                        // تحميل البيانات الخاصة بكل تبويب عند فتحه
+                        switch(tabId) {
+                            case 'students':
+                                displayStudents();
+                                break;
+                            case 'tests':
+                                displayTests();
+                                break;
+                            case 'results':
+                                displayResultsSummary();
+                                loadResultsData();
+                                break;
+                            case 'sync':
+                                checkSyncStatus();
+                                break;
+                        }
+                    }
+                });
+            });
+            
+            // تفعيل أول تبويب
+            if (tabBtns.length > 0) {
+                tabBtns[0].click();
+            }
         }
-
-        function generateReport() {
-            alert('⚠️ هذه الميزة قيد التطوير');
-        }
+        
+        // ===== التهيئة عند تحميل الصفحة =====
+        document.addEventListener('DOMContentLoaded', async function() {
+            console.log('📄 تم تحميل الصفحة');
+            
+            // تهيئة التبويبات
+            initTabs();
+            
+            // تهيئة التاريخ
+            const now = new Date();
+            const dateElement = document.getElementById('currentDate');
+            if (dateElement) {
+                dateElement.textContent = now.toLocaleDateString('ar-SA', {
+                    weekday: 'long',
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric'
+                });
+            }
+            
+            // إضافة حدث لاستيراد Excel
+            const fileInput = document.getElementById('excelFile');
+            if (fileInput) {
+                fileInput.addEventListener('change', handleExcelImport);
+            }
+            
+            // تهيئة Firebase
+            await initFirebase();
+            
+            // تحميل البيانات الأولية
+            displayStudents();
+            displayTests();
+            displayResultsSummary();
+            loadResultsData();
+            
+            console.log('✅ التطبيق جاهز للاستخدام');
+        });
+        
+        // جعل الدوال متاحة عالمياً
+        window.addStudent = addStudent;
+        window.editStudent = editStudent;
+        window.deleteStudent = deleteStudent;
+        window.exportStudentsToExcel = exportStudentsToExcel;
+        window.addTest = addTest;
+        window.editTest = editTest;
+        window.deleteTest = deleteTest;
+        window.enterTestResults = enterTestResults;
+        window.calculatePercentage = calculatePercentage;
+        window.saveTestResults = saveTestResults;
+        window.filterResults = filterResults;
+        window.exportResultsToExcel = exportResultsToExcel;
+        window.generateReport = generateReport;
+        window.manualSync = manualSync;
+        window.checkSyncStatus = checkSyncStatus;
+        window.downloadExcelTemplate = downloadExcelTemplate;
     </script>
 </body>
 </html>
