@@ -459,7 +459,7 @@
         
         .drawing-canvas {
             width: 100%;
-            height: 300px;
+            height: 400px;
             background: white;
             cursor: crosshair;
             touch-action: none;
@@ -494,6 +494,32 @@
             background: var(--primary);
             width: 0%;
             transition: width 0.3s ease;
+        }
+        
+        /* ===== زر إنهاء الاختبار ===== */
+        .finish-exam-btn {
+            background: var(--success);
+            color: white;
+            padding: 15px 40px;
+            border: none;
+            border-radius: var(--radius-md);
+            font-size: 1.2rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: var(--transition);
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 20px;
+            width: 100%;
+            text-align: center;
+            justify-content: center;
+        }
+        
+        .finish-exam-btn:hover {
+            background: #3a8bc8;
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
         }
         
         /* ===== واجهة المعلم ===== */
@@ -825,6 +851,23 @@
             border-right: 3px solid var(--primary);
         }
         
+        /* ===== رسالة النجاح للطالب ===== */
+        .student-success-message {
+            background: white;
+            border-radius: var(--radius-xl);
+            padding: 50px;
+            text-align: center;
+            max-width: 600px;
+            margin: 50px auto;
+            box-shadow: var(--shadow-lg);
+        }
+        
+        .success-icon {
+            font-size: 80px;
+            color: var(--success);
+            margin-bottom: 20px;
+        }
+        
         /* ===== التجاوبية ===== */
         @media (max-width: 768px) {
             .container {
@@ -872,6 +915,10 @@
             
             .exam-form-grid {
                 grid-template-columns: 1fr;
+            }
+            
+            .drawing-canvas {
+                height: 300px;
             }
         }
     </style>
@@ -959,6 +1006,21 @@
         <div class="exam-container" id="examContainer">
             <!-- يتم تعبئته بالأسئلة -->
         </div>
+    </div>
+    
+    <!-- رسالة النجاح للطالب -->
+    <div class="student-success-message" id="studentSuccessMessage" style="display: none;">
+        <div class="success-icon">
+            <i class="fas fa-check-circle"></i>
+        </div>
+        <h2 style="margin-bottom: 20px; color: var(--primary);">نتمنى لك التوفيق والنجاح</h2>
+        <p style="margin-bottom: 30px; color: #666; font-size: 1.2rem; line-height: 1.6;">
+            شكراً لك على أداء الاختبار<br>
+            سيتم إعلامك بالنتيجة لاحقاً
+        </p>
+        <button class="btn btn-primary" onclick="returnToLogin()" style="padding: 15px 50px;">
+            <i class="fas fa-home"></i> العودة للصفحة الرئيسية
+        </button>
     </div>
     
     <!-- واجهة المعلم -->
@@ -1272,42 +1334,24 @@
         </div>
     </div>
     
-    <!-- رسالة الانتهاء -->
-    <div class="completion-message" id="completionMessage">
-        <div class="message-card">
-            <div style="font-size: 4rem; color: var(--success); margin-bottom: 20px;">
-                <i class="fas fa-check-circle"></i>
-            </div>
-            <h2 style="margin-bottom: 15px; color: var(--primary);">تم الانتهاء من الاختبار</h2>
-            <p style="margin-bottom: 25px; color: #666; font-size: 1.1rem;">
-                شكراً لك على أداء الاختبار<br>
-                سيتم تصحيح الأسئلة المقالية من قبل المعلم
-            </p>
-            <button class="btn btn-primary" onclick="returnToLogin()" style="padding: 12px 40px;">
-                <i class="fas fa-sign-in-alt"></i> العودة للدخول
-            </button>
-        </div>
-    </div>
-    
     <script>
         // 🔥 إعدادات Firebase
         const firebaseConfig = {
-           apiKey: "AIzaSyB_ZgwQhrIulXfbkR7tvPYqJjuUtMSuIX8",
-           authDomain: "alhosin-2be4c.firebaseapp.com",
-           projectId: "alhosin-2be4c",
-           storageBucket: "alhosin-2be4c.firebasestorage.app",
-           messagingSenderId: "13131661059",
-           appId: "1:13131661059:web:bb3e7419e573e4c66ff336",
-           measurementId: "G-Q9H57NKX48"
+            apiKey: "AIzaSyAvdFgW-zTkZ7oq7wI3MjgKfX-TqgAUnyQ",
+            authDomain: "teacher-app-1a576.firebaseapp.com",
+            projectId: "teacher-app-1a576",
+            storageBucket: "teacher-app-1a576.firebasestorage.app",
+            messagingSenderId: "194924958624",
+            appId: "1:194924958624:web:aa1096b5d70444850413a1"
         };
         
         // ===== المتغيرات العامة =====
         let db;
         let isOnline = false;
-        let students = JSON.parse(localStorage.getItem('students')) || [];
-        let questions = JSON.parse(localStorage.getItem('questions')) || [];
-        let exams = JSON.parse(localStorage.getItem('exams')) || [];
-        let results = JSON.parse(localStorage.getItem('results')) || [];
+        let students = [];
+        let questions = [];
+        let exams = [];
+        let results = [];
         let currentStudent = null;
         let currentExam = null;
         let studentAnswers = [];
@@ -1363,7 +1407,8 @@
             try {
                 // تحميل الطلاب
                 const studentsSnapshot = await db.collection('students').get();
-                students = studentsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                const studentsData = studentsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                students = removeDuplicates(studentsData, 'civilId');
                 localStorage.setItem('students', JSON.stringify(students));
                 
                 // تحميل الأسئلة
@@ -1389,10 +1434,23 @@
         }
         
         function loadDataFromLocalStorage() {
-            students = JSON.parse(localStorage.getItem('students')) || [];
+            const studentsData = JSON.parse(localStorage.getItem('students')) || [];
+            students = removeDuplicates(studentsData, 'civilId');
             questions = JSON.parse(localStorage.getItem('questions')) || [];
             exams = JSON.parse(localStorage.getItem('exams')) || [];
             results = JSON.parse(localStorage.getItem('results')) || [];
+        }
+        
+        function removeDuplicates(array, key) {
+            const seen = new Set();
+            return array.filter(item => {
+                const value = item[key];
+                if (seen.has(value)) {
+                    return false;
+                }
+                seen.add(value);
+                return true;
+            });
         }
         
         function setupRealtimeListeners() {
@@ -1400,75 +1458,42 @@
             
             // الاستماع لتحديثات الطلاب
             db.collection('students').onSnapshot((snapshot) => {
-                snapshot.docChanges().forEach((change) => {
-                    const student = { id: change.doc.id, ...change.doc.data() };
-                    
-                    if (change.type === 'added') {
-                        const exists = students.find(s => s.id === student.id);
-                        if (!exists) students.push(student);
-                    } else if (change.type === 'modified') {
-                        const index = students.findIndex(s => s.id === student.id);
-                        if (index !== -1) students[index] = student;
-                    } else if (change.type === 'removed') {
-                        students = students.filter(s => s.id !== student.id);
-                    }
+                const updatedStudents = [];
+                snapshot.forEach(doc => {
+                    updatedStudents.push({ id: doc.id, ...doc.data() });
                 });
                 
+                students = removeDuplicates(updatedStudents, 'civilId');
                 localStorage.setItem('students', JSON.stringify(students));
+                
                 if (currentMode === 'teacher') updateStudentsTable();
             });
             
             // الاستماع لتحديثات الأسئلة
             db.collection('questions').onSnapshot((snapshot) => {
-                snapshot.docChanges().forEach((change) => {
-                    const question = { id: change.doc.id, ...change.doc.data() };
-                    
-                    if (change.type === 'added') {
-                        const exists = questions.find(q => q.id === question.id);
-                        if (!exists) questions.push(question);
-                    } else if (change.type === 'modified') {
-                        const index = questions.findIndex(q => q.id === question.id);
-                        if (index !== -1) questions[index] = question;
-                    }
+                questions = [];
+                snapshot.forEach(doc => {
+                    questions.push({ id: doc.id, ...doc.data() });
                 });
-                
                 localStorage.setItem('questions', JSON.stringify(questions));
             });
             
             // الاستماع لتحديثات الاختبارات
             db.collection('exams').onSnapshot((snapshot) => {
-                snapshot.docChanges().forEach((change) => {
-                    const exam = { id: change.doc.id, ...change.doc.data() };
-                    
-                    if (change.type === 'added') {
-                        const exists = exams.find(e => e.id === exam.id);
-                        if (!exists) exams.push(exam);
-                    } else if (change.type === 'modified') {
-                        const index = exams.findIndex(e => e.id === exam.id);
-                        if (index !== -1) exams[index] = exam;
-                    } else if (change.type === 'removed') {
-                        exams = exams.filter(e => e.id !== exam.id);
-                    }
+                exams = [];
+                snapshot.forEach(doc => {
+                    exams.push({ id: doc.id, ...doc.data() });
                 });
-                
                 localStorage.setItem('exams', JSON.stringify(exams));
                 if (currentMode === 'teacher') updateExamsTable();
             });
             
             // الاستماع لتحديثات النتائج
             db.collection('results').onSnapshot((snapshot) => {
-                snapshot.docChanges().forEach((change) => {
-                    const result = { id: change.doc.id, ...change.doc.data() };
-                    
-                    if (change.type === 'added') {
-                        const exists = results.find(r => r.id === result.id);
-                        if (!exists) results.push(result);
-                    } else if (change.type === 'modified') {
-                        const index = results.findIndex(r => r.id === result.id);
-                        if (index !== -1) results[index] = result;
-                    }
+                results = [];
+                snapshot.forEach(doc => {
+                    results.push({ id: doc.id, ...doc.data() });
                 });
-                
                 localStorage.setItem('results', JSON.stringify(results));
                 if (currentMode === 'teacher') updateResultsTable();
             });
@@ -1481,7 +1506,7 @@
                 let docRef;
                 if (data.id && !data.id.startsWith('local_')) {
                     const { id, ...dataWithoutId } = data;
-                    docRef = await db.collection(collection).doc(id).set(dataWithoutId);
+                    await db.collection(collection).doc(id).set(dataWithoutId);
                     return id;
                 } else {
                     docRef = await db.collection(collection).add(data);
@@ -1560,9 +1585,12 @@
             currentQuestionIndex = 0;
             
             // تحميل أسئلة الاختبار
-            currentExam.questionsData = (currentExam.questions || []).map(qId => 
-                questions.find(q => q.id === qId)
-            ).filter(q => q);
+            currentExam.questionsData = [];
+            if (currentExam.questions && Array.isArray(currentExam.questions)) {
+                currentExam.questionsData = currentExam.questions.map(qId => 
+                    questions.find(q => q.id === qId)
+                ).filter(q => q);
+            }
             
             if (currentExam.questionsData.length === 0) {
                 showError('studentLoginError', 'لا توجد أسئلة في هذا الاختبار');
@@ -1619,12 +1647,16 @@
         
         function logout() {
             document.getElementById('teacherContainer').style.display = 'none';
+            document.getElementById('studentContainer').style.display = 'none';
+            document.getElementById('studentSuccessMessage').style.display = 'none';
             document.getElementById('loginContainer').style.display = 'flex';
             currentMode = 'login';
             
             // مسح بيانات الدخول
             document.getElementById('teacherCivilId').value = '';
             document.getElementById('teacherCode').value = '';
+            document.getElementById('studentCivilId').value = '';
+            document.getElementById('examCode').value = '';
             showLoginTab('teacher');
         }
         
@@ -1696,15 +1728,33 @@
         function updateTimerDisplay() {
             const minutes = Math.floor(timeRemaining / 60);
             const seconds = timeRemaining % 60;
-            document.querySelector('.exam-timer span').textContent = 
-                `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+            
+            // إنشاء عنصر المؤقت إذا لم يكن موجوداً
+            let timerElement = document.querySelector('.exam-timer');
+            if (!timerElement) {
+                const examContainer = document.getElementById('examContainer');
+                const headerHTML = `
+                    <div class="exam-header">
+                        <h2 style="margin: 0;">${currentExam.name}</h2>
+                        <div class="exam-timer">
+                            <i class="fas fa-clock"></i>
+                            <span>${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}</span>
+                        </div>
+                    </div>
+                `;
+                examContainer.innerHTML = headerHTML;
+            } else {
+                timerElement.querySelector('span').textContent = 
+                    `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+            }
         }
         
         function displayQuestion(index) {
             const container = document.getElementById('examContainer');
             
             // إزالة الأسئلة القديمة
-            container.querySelectorAll('.question-card').forEach(card => card.remove());
+            const oldQuestions = container.querySelectorAll('.question-card');
+            oldQuestions.forEach(card => card.remove());
             
             const question = currentExam.questionsData[index];
             if (!question) return;
@@ -1757,7 +1807,7 @@
             }
             
             questionCard.innerHTML = questionHTML;
-            container.insertBefore(questionCard, container.querySelector('.exam-controls'));
+            container.appendChild(questionCard);
             
             // إذا كان سؤال مقالي، تهيئة لوحة الرسم
             if (question.type === 'essay') {
@@ -1768,7 +1818,7 @@
             updateProgressBar();
             
             // تحديث أزرار التنقل
-            updateNavigationButtons();
+            updateNavigationButtons(index);
         }
         
         function initDrawingCanvas(questionIndex) {
@@ -1779,12 +1829,16 @@
             canvas.width = canvas.offsetWidth;
             canvas.height = canvas.offsetHeight;
             
+            // مسح اللوحة
+            ctx.fillStyle = 'white';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
             // استعادة الرسم السابق إن وجد
             const savedDrawing = studentAnswers[questionIndex].answer;
             if (savedDrawing && savedDrawing.startsWith('data:')) {
                 const img = new Image();
                 img.onload = function() {
-                    ctx.drawImage(img, 0, 0);
+                    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
                 };
                 img.src = savedDrawing;
             }
@@ -1796,24 +1850,40 @@
             canvas.addEventListener('mouseout', stopDrawing);
             
             // أحداث اللمس
-            canvas.addEventListener('touchstart', handleTouchStart);
-            canvas.addEventListener('touchmove', handleTouchMove);
+            canvas.addEventListener('touchstart', handleTouchStart, { passive: false });
+            canvas.addEventListener('touchmove', handleTouchMove, { passive: false });
             canvas.addEventListener('touchend', stopDrawing);
             
             function startDrawing(e) {
+                e.preventDefault();
                 isDrawing = true;
                 const rect = canvas.getBoundingClientRect();
-                lastX = e.clientX - rect.left;
-                lastY = e.clientY - rect.top;
-                saveDrawingState();
+                
+                if (e.type === 'touchstart') {
+                    const touch = e.touches[0];
+                    lastX = touch.clientX - rect.left;
+                    lastY = touch.clientY - rect.top;
+                } else {
+                    lastX = e.clientX - rect.left;
+                    lastY = e.clientY - rect.top;
+                }
             }
             
             function draw(e) {
                 if (!isDrawing) return;
+                e.preventDefault();
                 
                 const rect = canvas.getBoundingClientRect();
-                const x = e.clientX - rect.left;
-                const y = e.clientY - rect.top;
+                let x, y;
+                
+                if (e.type === 'touchmove') {
+                    const touch = e.touches[0];
+                    x = touch.clientX - rect.left;
+                    y = touch.clientY - rect.top;
+                } else {
+                    x = e.clientX - rect.left;
+                    y = e.clientY - rect.top;
+                }
                 
                 ctx.strokeStyle = currentTool === 'eraser' ? '#ffffff' : document.getElementById('drawingColor').value;
                 ctx.lineWidth = document.getElementById('drawingSize').value;
@@ -1838,41 +1908,12 @@
             
             function handleTouchStart(e) {
                 e.preventDefault();
-                const touch = e.touches[0];
-                const rect = canvas.getBoundingClientRect();
-                isDrawing = true;
-                lastX = touch.clientX - rect.left;
-                lastY = touch.clientY - rect.top;
-                saveDrawingState();
+                startDrawing(e);
             }
             
             function handleTouchMove(e) {
                 e.preventDefault();
-                if (!isDrawing) return;
-                
-                const touch = e.touches[0];
-                const rect = canvas.getBoundingClientRect();
-                const x = touch.clientX - rect.left;
-                const y = touch.clientY - rect.top;
-                
-                ctx.strokeStyle = currentTool === 'eraser' ? '#ffffff' : document.getElementById('drawingColor').value;
-                ctx.lineWidth = document.getElementById('drawingSize').value;
-                ctx.lineCap = 'round';
-                ctx.lineJoin = 'round';
-                
-                ctx.beginPath();
-                ctx.moveTo(lastX, lastY);
-                ctx.lineTo(x, y);
-                ctx.stroke();
-                
-                lastX = x;
-                lastY = y;
-                
-                studentAnswers[questionIndex].answer = canvas.toDataURL();
-            }
-            
-            function saveDrawingState() {
-                drawingHistory.push(ctx.getImageData(0, 0, canvas.width, canvas.height));
+                draw(e);
             }
         }
         
@@ -1893,7 +1934,8 @@
         function clearDrawingCanvas() {
             const canvas = document.getElementById('drawingCanvas');
             const ctx = canvas.getContext('2d');
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = 'white';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
             studentAnswers[currentQuestionIndex].answer = '';
             drawingHistory = [];
         }
@@ -1909,12 +1951,11 @@
         
         function updateProgressBar() {
             const progress = ((currentQuestionIndex + 1) / currentExam.questionsData.length) * 100;
-            document.querySelector('.progress-fill').style.width = `${progress}%`;
-        }
-        
-        function updateNavigationButtons() {
-            // إنشاء أزرار التحكم إذا لم تكن موجودة
-            if (!document.querySelector('.exam-controls')) {
+            
+            // إنشاء عنصر التقدم إذا لم يكن موجوداً
+            let progressFill = document.querySelector('.progress-fill');
+            if (!progressFill) {
+                const container = document.getElementById('examContainer');
                 const controlsHTML = `
                     <div class="exam-controls">
                         <button class="btn btn-secondary" id="prevBtn" onclick="previousQuestion()">
@@ -1924,27 +1965,65 @@
                             <div class="progress-bar">
                                 <div class="progress-fill"></div>
                             </div>
+                            <div style="text-align: center; margin-top: 5px; font-size: 0.9rem;">
+                                ${currentQuestionIndex + 1} / ${currentExam.questionsData.length}
+                            </div>
                         </div>
                         <button class="btn btn-secondary" id="nextBtn" onclick="nextQuestion()">
                             التالي <i class="fas fa-arrow-left"></i>
                         </button>
                     </div>
-                    <div style="text-align: center; margin-top: 20px;">
-                        <button class="btn btn-primary" onclick="submitExam()" style="padding: 15px 50px;">
-                            <i class="fas fa-paper-plane"></i> إرسال الاختبار
-                        </button>
-                    </div>
                 `;
-                
-                document.getElementById('examContainer').innerHTML += controlsHTML;
+                container.innerHTML += controlsHTML;
+                progressFill = document.querySelector('.progress-fill');
             }
             
+            progressFill.style.width = `${progress}%`;
+        }
+        
+        function updateNavigationButtons(index) {
             // تحديث حالة الأزرار
-            document.getElementById('prevBtn').disabled = currentQuestionIndex === 0;
-            document.getElementById('nextBtn').disabled = currentQuestionIndex === currentExam.questionsData.length - 1;
+            const prevBtn = document.getElementById('prevBtn');
+            const nextBtn = document.getElementById('nextBtn');
+            
+            if (prevBtn) {
+                prevBtn.disabled = index === 0;
+                prevBtn.style.opacity = index === 0 ? '0.5' : '1';
+            }
+            
+            if (nextBtn) {
+                const isLastQuestion = index === currentExam.questionsData.length - 1;
+                nextBtn.disabled = isLastQuestion;
+                nextBtn.style.opacity = isLastQuestion ? '0.5' : '1';
+                nextBtn.innerHTML = isLastQuestion ? 
+                    '<i class="fas fa-flag-checkered"></i> إنهاء' : 
+                    'التالي <i class="fas fa-arrow-left"></i>';
+                nextBtn.onclick = isLastQuestion ? finishExam : nextQuestion;
+            }
+            
+            // إضافة زر إنهاء إذا كان السؤال الأخير
+            if (index === currentExam.questionsData.length - 1) {
+                let finishBtn = document.querySelector('.finish-exam-btn');
+                if (!finishBtn) {
+                    const container = document.getElementById('examContainer');
+                    const finishHTML = `
+                        <button class="finish-exam-btn" onclick="finishExam()">
+                            <i class="fas fa-paper-plane"></i> إنهاء الاختبار
+                        </button>
+                    `;
+                    container.innerHTML += finishHTML;
+                }
+            }
         }
         
         function previousQuestion() {
+            // التحقق من إجابة السؤال الحالي
+            const currentAnswer = studentAnswers[currentQuestionIndex];
+            if (!currentAnswer.answer || currentAnswer.answer.trim() === '') {
+                alert('❌ يجب الإجابة على هذا السؤال قبل الانتقال للسابق');
+                return;
+            }
+            
             if (currentQuestionIndex > 0) {
                 currentQuestionIndex--;
                 displayQuestion(currentQuestionIndex);
@@ -1965,14 +2044,18 @@
             }
         }
         
-        async function submitExam() {
+        function finishExam() {
             // التحقق من إجابات جميع الأسئلة
             const unanswered = studentAnswers.filter(a => !a.answer || a.answer.trim() === '');
             if (unanswered.length > 0) {
-                alert(`❌ يجب الإجابة على جميع الأسئلة\n\nعدد الأسئلة غير المجابة: ${unanswered.length}`);
-                return;
+                const confirmFinish = confirm(`❌ يوجد ${unanswered.length} سؤال غير مجاب\nهل تريد إنهاء الاختبار مع بقاء هذه الأسئلة بدون إجابة؟`);
+                if (!confirmFinish) return;
             }
             
+            submitExam();
+        }
+        
+        async function submitExam() {
             // إيقاف المؤقت
             clearInterval(examTimer);
             
@@ -2014,12 +2097,13 @@
             results.push(result);
             localStorage.setItem('results', JSON.stringify(results));
             
-            // إظهار رسالة الانتهاء
-            document.getElementById('completionMessage').classList.add('active');
+            // إظهار رسالة النجاح
+            document.getElementById('studentContainer').style.display = 'none';
+            document.getElementById('studentSuccessMessage').style.display = 'block';
         }
         
         function returnToLogin() {
-            document.getElementById('completionMessage').classList.remove('active');
+            document.getElementById('studentSuccessMessage').style.display = 'none';
             document.getElementById('studentContainer').style.display = 'none';
             document.getElementById('loginContainer').style.display = 'flex';
             
@@ -2098,22 +2182,11 @@
                 createdAt: new Date().toISOString()
             };
             
-            // حفظ محلياً أولاً
-            const localId = 'local_' + Date.now();
-            newStudent.id = localId;
-            students.push(newStudent);
-            localStorage.setItem('students', JSON.stringify(students));
-            
-            // محاولة الحفظ في السحابة
+            // حفظ في السحابة
             saveToFirebase('students', newStudent).then(firebaseId => {
-                if (firebaseId && firebaseId !== localId) {
-                    newStudent.id = firebaseId;
-                    const index = students.findIndex(s => s.id === localId);
-                    if (index !== -1) {
-                        students[index] = newStudent;
-                        localStorage.setItem('students', JSON.stringify(students));
-                    }
-                }
+                newStudent.id = firebaseId;
+                students.push(newStudent);
+                localStorage.setItem('students', JSON.stringify(students));
                 updateStudentsTable();
                 alert('✅ تم إضافة الطالب بنجاح');
             });
@@ -2129,21 +2202,15 @@
                     const data = new Uint8Array(e.target.result);
                     const workbook = XLSX.read(data, { type: 'array' });
                     const sheet = workbook.Sheets[workbook.SheetNames[0]];
-                    const jsonData = XLSX.utils.sheet_to_json(sheet, { header: 1 });
+                    const jsonData = XLSX.utils.sheet_to_json(sheet);
                     
                     let importedCount = 0;
                     let duplicateCount = 0;
                     
-                    // تخطي الصف الأول إذا كان يحتوي على عناوين
-                    const startRow = jsonData[0][0] && isNaN(jsonData[0][0]) ? 1 : 0;
-                    
-                    for (let i = startRow; i < jsonData.length; i++) {
-                        const row = jsonData[i];
-                        if (!row || row.length < 2) continue;
-                        
-                        const civilId = row[0]?.toString().trim();
-                        const name = row[1]?.toString().trim();
-                        const className = row[2]?.toString().trim() || 'غير محدد';
+                    for (const row of jsonData) {
+                        const civilId = row['الرقم المدني']?.toString().trim() || row['civilId']?.toString().trim();
+                        const name = row['الاسم']?.toString().trim() || row['name']?.toString().trim();
+                        const className = row['الصف']?.toString().trim() || row['class']?.toString().trim() || 'غير محدد';
                         
                         if (civilId && name && civilId !== 'الرقم المدني') {
                             // التحقق من عدم التكرار
@@ -2159,18 +2226,10 @@
                                 createdAt: new Date().toISOString()
                             };
                             
-                            const localId = 'local_' + Date.now() + '_' + importedCount;
-                            newStudent.id = localId;
-                            students.push(newStudent);
-                            
-                            // محاولة الحفظ في السحابة
+                            // حفظ في السحابة
                             const firebaseId = await saveToFirebase('students', newStudent);
-                            if (firebaseId && firebaseId !== localId) {
-                                newStudent.id = firebaseId;
-                                const index = students.findIndex(s => s.id === localId);
-                                if (index !== -1) students[index] = newStudent;
-                            }
-                            
+                            newStudent.id = firebaseId;
+                            students.push(newStudent);
                             importedCount++;
                         }
                     }
@@ -2217,12 +2276,12 @@
         async function deleteStudent(studentId) {
             if (!confirm('هل أنت متأكد من حذف هذا الطالب؟')) return;
             
+            // حذف من السحابة
+            await deleteFromFirebase('students', studentId);
+            
             // حذف محلي
             students = students.filter(s => s.id !== studentId);
             localStorage.setItem('students', JSON.stringify(students));
-            
-            // حذف من السحابة
-            await deleteFromFirebase('students', studentId);
             
             updateStudentsTable();
             alert('✅ تم حذف الطالب بنجاح');
@@ -2473,9 +2532,10 @@
             document.getElementById('examCodeInput').value = '';
             document.getElementById('examDuration').value = '60';
             examQuestions = [];
-            currentCreatingExam = null;
             
-            alert(`✅ تم حفظ الاختبار بنجاح\nالكود: ${currentCreatingExam?.code}\nعدد الأسئلة: ${questionIds.length}`);
+            alert(`✅ تم حفظ الاختبار بنجاح\nالكود: ${currentCreatingExam.code}\nعدد الأسئلة: ${questionIds.length}`);
+            
+            currentCreatingExam = null;
         }
         
         function updateExamsTable() {
@@ -2509,6 +2569,42 @@
                 `;
                 tbody.appendChild(row);
             });
+        }
+        
+        function editExam(examId) {
+            const exam = exams.find(e => e.id === examId);
+            if (!exam) return;
+            
+            const newName = prompt('اسم الاختبار الجديد:', exam.name);
+            if (!newName) return;
+            
+            const newStatus = prompt('الحالة (active أو inactive):', exam.status);
+            if (!newStatus || !['active', 'inactive'].includes(newStatus)) {
+                alert('❌ الحالة يجب أن تكون active أو inactive');
+                return;
+            }
+            
+            exam.name = newName;
+            exam.status = newStatus;
+            
+            saveToFirebase('exams', exam);
+            localStorage.setItem('exams', JSON.stringify(exams));
+            updateExamsTable();
+            alert('✅ تم تعديل الاختبار بنجاح');
+        }
+        
+        async function deleteExam(examId) {
+            if (!confirm('هل أنت متأكد من حذف هذا الاختبار؟')) return;
+            
+            // حذف من السحابة
+            await deleteFromFirebase('exams', examId);
+            
+            // حذف محلي
+            exams = exams.filter(e => e.id !== examId);
+            localStorage.setItem('exams', JSON.stringify(exams));
+            
+            updateExamsTable();
+            alert('✅ تم حذف الاختبار بنجاح');
         }
         
         // ===== النتائج والتصحيح =====
@@ -2549,11 +2645,30 @@
                             <button class="btn-action btn-print" onclick="printResult(${index})">
                                 <i class="fas fa-print"></i> طباعة
                             </button>
+                            <button class="btn-action btn-delete" onclick="deleteResult(${index})">
+                                <i class="fas fa-trash"></i> حذف
+                            </button>
                         </div>
                     </td>
                 `;
                 tbody.appendChild(row);
             });
+        }
+        
+        async function deleteResult(resultIndex) {
+            if (!confirm('هل أنت متأكد من حذف هذه النتيجة؟')) return;
+            
+            const result = results[resultIndex];
+            
+            // حذف من السحابة
+            await deleteFromFirebase('results', result.id);
+            
+            // حذف محلي
+            results.splice(resultIndex, 1);
+            localStorage.setItem('results', JSON.stringify(results));
+            
+            updateResultsTable();
+            alert('✅ تم حذف النتيجة بنجاح');
         }
         
         function startCorrection(resultIndex) {
@@ -2637,7 +2752,8 @@
             canvas.height = canvas.offsetHeight;
             
             // مسح اللوحة
-            correctionCtx.clearRect(0, 0, canvas.width, canvas.height);
+            correctionCtx.fillStyle = 'white';
+            correctionCtx.fillRect(0, 0, canvas.width, canvas.height);
             
             // عرض الإجابة الأصلية إذا كانت صورة
             const essayAnswers = currentCorrectionResult.answers.filter(a => a.type === 'essay');
@@ -2646,14 +2762,7 @@
             if (currentEssay.answer && currentEssay.answer.startsWith('data:')) {
                 const img = new Image();
                 img.onload = function() {
-                    // حساب الأبعاد المناسبة
-                    const scale = Math.min(canvas.width / img.width, canvas.height / img.height);
-                    const width = img.width * scale;
-                    const height = img.height * scale;
-                    const x = (canvas.width - width) / 2;
-                    const y = (canvas.height - height) / 2;
-                    
-                    correctionCtx.drawImage(img, x, y, width, height);
+                    correctionCtx.drawImage(img, 0, 0, canvas.width, canvas.height);
                 };
                 img.src = currentEssay.answer;
             }
@@ -2675,7 +2784,8 @@
         
         function clearCorrectionCanvas() {
             const canvas = document.getElementById('correctionCanvas');
-            correctionCtx.clearRect(0, 0, canvas.width, canvas.height);
+            correctionCtx.fillStyle = 'white';
+            correctionCtx.fillRect(0, 0, canvas.width, canvas.height);
             initCorrectionCanvas(); // إعادة تحميل الصورة الأصلية
         }
         
@@ -2856,5 +2966,3 @@
     </script>
 </body>
 </html>
-
-
